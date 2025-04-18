@@ -4,6 +4,7 @@ plugins {
     id("org.springframework.boot") version "3.4.4"
     id("io.spring.dependency-management") version "1.1.7"
     kotlin("plugin.jpa") version "1.9.25"
+    kotlin("kapt") version "1.9.25"
 }
 
 group = "dev.cnpe"
@@ -15,17 +16,19 @@ java {
     }
 }
 
-configurations {
-    compileOnly {
-        extendsFrom(configurations.annotationProcessor.get())
-    }
-}
+//configurations {
+//    compileOnly {
+//        extendsFrom(configurations.annotationProcessor.get())
+//    }
+//}
 
 repositories {
     mavenCentral()
 }
 
 extra["springModulithVersion"] = "1.3.4"
+
+val mapstructVersion = "1.6.3"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
@@ -38,6 +41,10 @@ dependencies {
     implementation("org.springframework.modulith:spring-modulith-starter-jpa")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
     implementation("me.paulschwarz:spring-dotenv:4.0.0")
+    implementation("org.mapstruct:mapstruct:${mapstructVersion}")
+
+    kapt("org.mapstruct:mapstruct-processor:${mapstructVersion}")
+
     developmentOnly("org.springframework.boot:spring-boot-docker-compose")
     runtimeOnly("org.postgresql:postgresql")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
@@ -45,6 +52,13 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.springframework.modulith:spring-modulith-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+
+kapt {
+    arguments {
+
+    }
 }
 
 dependencyManagement {
