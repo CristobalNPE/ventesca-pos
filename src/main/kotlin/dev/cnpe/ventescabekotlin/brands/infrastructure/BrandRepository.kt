@@ -15,7 +15,7 @@ interface BrandRepository : JpaRepository<Brand, Long> {
         where b.id = :brandId
         """
     )
-    fun betBrandCodeById(brandId: Long): String?
+    fun getBrandCodeById(brandId: Long): String?
 
     fun getBrandByIsDefaultTrue(): Brand?
 }
