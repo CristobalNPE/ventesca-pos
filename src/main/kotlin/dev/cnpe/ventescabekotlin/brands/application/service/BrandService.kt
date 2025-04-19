@@ -98,10 +98,10 @@ class BrandService(
     }
 
     private fun updateBrandFromRequest(brand: Brand, brandRequest: UpdateBrandRequest) {
-        brandRequest.name?.let { newName ->
+        brandRequest.name.let { newName ->
             if (brand.name != newName && brandRepository.existsByName(newName)) {
                 throw RuntimeException("Brand name '$newName' already exists.")
-//                throw DomainException(DUPLICATED_DATA, "name '$newName'")
+    //                throw DomainException(DUPLICATED_DATA, "name '$newName'")
             }
             brand.name = newName
             brand.updateCodeValue(codeGeneratorService.generateCode(newName))
