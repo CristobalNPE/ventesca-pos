@@ -12,12 +12,12 @@ class CodeGeneratorService {
 
     fun generateCode(name: String): String {
 
-        // why the non-null check here? we can just ask for the name not to be null in the fun params no?
+        require(name.isNotBlank()) { "Name cannot be blank." }
 
         val words = name.split(Regex("\\s+|&|\\+|-")).filter { it.isNotEmpty() }
 
         val codeBuilder = StringBuilder(
-            words.joinToString("") { it.first().uppercase() } // this syntax is weird to me, explain plase
+            words.joinToString("") { it.first().uppercase() }
         )
 
         if (codeBuilder.length < CODE_LENGTH && words.isNotEmpty()) {
