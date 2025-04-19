@@ -55,12 +55,13 @@ abstract class BaseEntity(
         if (this === other) return true
         if (other == null) return false
 
-        val otherEffectiveClass =
-            if (other is HibernateProxy) other.hibernateLazyInitializer.persistentClass else other.javaClass
-        val thisEffectiveClass =
-            if (this is HibernateProxy) this.hibernateLazyInitializer.persistentClass else this.javaClass
+        if (this::class.java != other::class.java) {
+            val otherActualClass =
+                if (other is HibernateProxy) other.hibernateLazyInitializer.persistentClass else other.javaClass
+            if (this.javaClass != otherActualClass) return false
+        }
 
-        other as BaseEntity
+        if (other !is BaseEntity) return false
 
         return this.id != null && this.id == other.id
     }
