@@ -1,10 +1,10 @@
 plugins {
     kotlin("jvm") version "1.9.25"
     kotlin("plugin.spring") version "1.9.25"
+//    kotlin("kapt") version "1.9.25"
     id("org.springframework.boot") version "3.4.4"
     id("io.spring.dependency-management") version "1.1.7"
     kotlin("plugin.jpa") version "1.9.25"
-    kotlin("kapt") version "1.9.25"
 }
 
 group = "dev.cnpe"
@@ -37,16 +37,25 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+
     implementation("org.springframework.modulith:spring-modulith-starter-core")
     implementation("org.springframework.modulith:spring-modulith-starter-jpa")
+
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
     implementation("me.paulschwarz:spring-dotenv:4.0.0")
-    implementation("org.mapstruct:mapstruct:${mapstructVersion}")
+    implementation("io.github.oshai:kotlin-logging-jvm:7.0.7")
 
-    kapt("org.mapstruct:mapstruct-processor:${mapstructVersion}")
+
+//    implementation("org.mapstruct:mapstruct:${mapstructVersion}")
+//    kapt("org.mapstruct:mapstruct-processor:$mapstructVersion")
+//
+//    kapt("org.springframework.boot:spring-boot-configuration-processor")
+//    kapt("org.springframework.modulith:spring-modulith-apt:${property("springModulithVersion")}")
+
 
     developmentOnly("org.springframework.boot:spring-boot-docker-compose")
     runtimeOnly("org.postgresql:postgresql")
+
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
@@ -54,12 +63,9 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
-
-kapt {
-    arguments {
-
-    }
-}
+//kapt {
+//    includeCompileClasspath = false
+//}
 
 dependencyManagement {
     imports {
