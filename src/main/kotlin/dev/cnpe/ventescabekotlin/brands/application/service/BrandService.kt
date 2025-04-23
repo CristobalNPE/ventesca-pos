@@ -5,11 +5,15 @@ import dev.cnpe.ventescabekotlin.brands.application.dto.request.UpdateBrandReque
 import dev.cnpe.ventescabekotlin.brands.application.dto.response.BrandDetailedResponse
 import dev.cnpe.ventescabekotlin.brands.application.dto.response.BrandSummaryResponse
 import dev.cnpe.ventescabekotlin.brands.application.events.BrandDeleteAttemptedEvent
+import dev.cnpe.ventescabekotlin.brands.application.exception.BrandOperationNotAllowedReason.IS_DEFAULT_BRAND
 import dev.cnpe.ventescabekotlin.brands.application.mapper.BrandMapper
 import dev.cnpe.ventescabekotlin.brands.domain.factory.BrandFactory
 import dev.cnpe.ventescabekotlin.brands.domain.model.Brand
 import dev.cnpe.ventescabekotlin.brands.infrastructure.BrandRepository
 import dev.cnpe.ventescabekotlin.business.event.BusinessActivatedEvent
+import dev.cnpe.ventescabekotlin.shared.application.exception.createDuplicatedResourceException
+import dev.cnpe.ventescabekotlin.shared.application.exception.createOperationNotAllowedException
+import dev.cnpe.ventescabekotlin.shared.application.exception.createResourceNotFoundException
 import dev.cnpe.ventescabekotlin.shared.application.service.CodeGeneratorService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.context.ApplicationEventPublisher
@@ -32,7 +36,7 @@ class BrandService(
 
     fun registerBrand(brandRequest: CreateBrandRequest): BrandSummaryResponse {
         log.debug { "Attempting to register brand: ${brandRequest.name}" }
-//        validateBrandRequest(brandRequest)
+        validateBrandRequest(brandRequest)
 
         val newBrand = brandFactory.create(brandRequest.name)
         val savedBrand = brandRepository.save(newBrand)
@@ -70,8 +74,11 @@ class BrandService(
         val brand = findBrandByIdOrThrow(id)
 
         if (brand.isDefault) {
-            throw RuntimeException("Cannot delete the default brand.")
-//            throw DomainException(OPERATION_NOT_ALLOWED, "Cannot delete the default brand.")
+            throw createOperationNotAllowedException(
+                reason = IS_DEFAULT_BRAND,
+                entityId = brand.id!!,
+                additionalDetails = mapOf("brandName" to brand.name)
+            )
         }
         // TODO: Add check for product dependencies using ProductInfoPort when migrated
         log.warn { "Deleting brand: ${brand.name} (ID: ${brand.id})" }
@@ -100,8 +107,7 @@ class BrandService(
     private fun updateBrandFromRequest(brand: Brand, brandRequest: UpdateBrandRequest) {
         brandRequest.name.let { newName ->
             if (brand.name != newName && brandRepository.existsByName(newName)) {
-                throw RuntimeException("Brand name '$newName' already exists.")
-    //                throw DomainException(DUPLICATED_DATA, "name '$newName'")
+                throw createDuplicatedResourceException("name", brandRequest.name)
             }
             brand.name = newName
             brand.updateCodeValue(codeGeneratorService.generateCode(newName))
@@ -111,18 +117,15 @@ class BrandService(
 
     private fun validateBrandRequest(brandRequest: CreateBrandRequest) {
         if (brandRepository.existsByName(brandRequest.name)) {
-            throw RuntimeException("Brand name '${brandRequest.name}' already exists.")
-//            throw DomainException(DUPLICATED_DATA, "name '${brandRequest.name}'")
+            throw createDuplicatedResourceException("name", brandRequest.name)
         }
     }
 
     private fun findBrandByIdOrThrow(id: Long): Brand {
         log.debug { "Fetching brand details for ID: $id" }
         val brand = brandRepository.findByIdOrNull(id)
-            ?: throw RuntimeException("Brand not found for ID: $id")
-        //  ?: throw DomainException(RESOURCE_NOT_FOUND, id.toString())
+            ?: throw createResourceNotFoundException("Brand", id)
 
         return brand
     }
-
 }
