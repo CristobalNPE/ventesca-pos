@@ -11,6 +11,7 @@ import dev.cnpe.ventescabekotlin.brands.domain.factory.BrandFactory
 import dev.cnpe.ventescabekotlin.brands.domain.model.Brand
 import dev.cnpe.ventescabekotlin.brands.infrastructure.BrandRepository
 import dev.cnpe.ventescabekotlin.business.event.BusinessActivatedEvent
+import dev.cnpe.ventescabekotlin.shared.application.exception.DomainException
 import dev.cnpe.ventescabekotlin.shared.application.exception.createDuplicatedResourceException
 import dev.cnpe.ventescabekotlin.shared.application.exception.createOperationNotAllowedException
 import dev.cnpe.ventescabekotlin.shared.application.exception.createResourceNotFoundException
@@ -34,6 +35,19 @@ class BrandService(
     private val codeGeneratorService: CodeGeneratorService
 ) {
 
+    // *******************************
+    // 🔰 Brand Management
+    // *******************************
+
+    /**
+     * Registers a new brand based on the provided request, validates the data,
+     * and persists the brand into the repository. Converts the newly created
+     * brand entity into a summary response.
+     *
+     * @param brandRequest The request containing the brand details to create, including a mandatory name.
+     * @return A summary response object containing details of the newly created brand.
+     * @throws DomainException If a brand with the same name already exists.
+     */
     fun registerBrand(brandRequest: CreateBrandRequest): BrandSummaryResponse {
         log.debug { "Attempting to register brand: ${brandRequest.name}" }
         validateBrandRequest(brandRequest)
@@ -45,12 +59,27 @@ class BrandService(
         return brandMapper.toSummary(savedBrand)
     }
 
+    /**
+     * Retrieves detailed information about a brand based on its unique identifier.
+     *
+     * @param id The ID of the brand to retrieve details for.
+     * @return A detailed response object containing information about the specified brand.
+     * @throws DomainException If the brand with the given ID does not exist.
+     */
     @Transactional(readOnly = true)
     fun getBrandDetails(id: Long): BrandDetailedResponse {
         val brand = findBrandByIdOrThrow(id)
         return brandMapper.toDetailed(brand)
     }
 
+    /**
+     * Updates an existing brand based on the provided brand ID and update request data.
+     *
+     * @param id The ID of the brand to update.
+     * @param brandRequest The request containing the updated brand details.
+     * @return A detailed response object containing information about the updated brand.
+     * @throws DomainException If the update request fails validation or if a brand with the requested name already exists.
+     */
     fun updateBrand(id: Long, brandRequest: UpdateBrandRequest): BrandDetailedResponse {
         log.debug { "Attempting to update brand for ID: $id with data: $brandRequest" }
         val brand = findBrandByIdOrThrow(id)
@@ -63,12 +92,25 @@ class BrandService(
         return brandMapper.toDetailed(updatedBrand)
     }
 
+    /**
+     * Retrieves a list of all brands and maps them to summary response objects.
+     *
+     * @return A list of BrandSummaryResponse objects representing all brands.
+     */
     @Transactional(readOnly = true)
     fun getAllBrands(): List<BrandSummaryResponse> {
         log.debug { "Fetching all brands" }
         return brandRepository.findAll().map { brandMapper.toSummary(it) }
     }
 
+    /**
+     * Deletes a brand identified by the provided ID.
+     * If the brand is marked as a default brand, an exception is thrown.
+     * Also, emits an event indicating an attempt to delete the brand.
+     *
+     * @param id The unique identifier of the brand to be deleted.
+     * @throws DomainException If the brand is a default brand or does not exist.
+     */
     fun deleteBrand(id: Long) {
         log.debug { "Attempting to delete brand for ID: $id" }
         val brand = findBrandByIdOrThrow(id)
@@ -87,6 +129,13 @@ class BrandService(
         log.info { "Deleted brand: ${brand.name} (ID: ${brand.id})" }
     }
 
+    /**
+     * Handles the activation of a business by reacting to the BusinessActivatedEvent.
+     * If no brands exist, a default brand is created and persisted in the repository.
+     * The default brand is named after the business with a suffix "(Marca Propia)" and a unique code is generated for it.
+     *
+     * @param event The BusinessActivatedEvent containing information about the activated business such as business ID and name.
+     */
     @ApplicationModuleListener
     fun onBusinessActivated(event: BusinessActivatedEvent) {
         log.debug { "Received BusinessActivatedEvent for: ${event.businessId}" }
@@ -103,6 +152,10 @@ class BrandService(
         val saved = brandRepository.save(defaultBrand)
         log.info { "Created default brand: ${saved.name} (ID: ${saved.id})" }
     }
+
+    // *******************************
+    // 🔰 Private Helpers
+    // *******************************
 
     private fun updateBrandFromRequest(brand: Brand, brandRequest: UpdateBrandRequest) {
         brandRequest.name.let { newName ->
