@@ -110,6 +110,7 @@ class CategoryController(
     }
 
     @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete category by ID", description = "Deletes a single category by its unique identifier.")
     @ApiResponses(
         value = [
@@ -117,9 +118,8 @@ class CategoryController(
             ApiResponse(responseCode = "404", description = "Category not found")
         ]
     )
-    fun deleteCategoryById(@PathVariable(name = "id") id: Long): ResponseEntity<Unit> {
+    fun deleteCategoryById(@PathVariable(name = "id") id: Long) {
         categoryService.deleteCategory(id)
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build()
     }
 
     @PutMapping("/{id}")
