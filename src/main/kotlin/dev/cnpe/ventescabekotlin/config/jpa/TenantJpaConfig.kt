@@ -1,6 +1,9 @@
 package dev.cnpe.ventescabekotlin.config.jpa
 
 import dev.cnpe.ventescabekotlin.brands.infrastructure.BrandRepository
+import dev.cnpe.ventescabekotlin.business.infrastructure.persistence.BusinessRepository
+import dev.cnpe.ventescabekotlin.categories.infrastructure.CategoryRepository
+import dev.cnpe.ventescabekotlin.currency.infrastructure.persistence.CurrencyRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.persistence.EntityManagerFactory
 import org.hibernate.context.spi.CurrentTenantIdentifierResolver
@@ -24,13 +27,14 @@ private val log = KotlinLogging.logger {}
     ],
     basePackageClasses = [
         BrandRepository::class,
+        CategoryRepository::class
     ],
     excludeFilters = [
         ComponentScan.Filter(
             type = FilterType.ASSIGNABLE_TYPE,
             classes = [
-//                BusinessRepository::class,
-//                CurrencyRepository::class
+                BusinessRepository::class,
+                CurrencyRepository::class
             ]
         )
     ],

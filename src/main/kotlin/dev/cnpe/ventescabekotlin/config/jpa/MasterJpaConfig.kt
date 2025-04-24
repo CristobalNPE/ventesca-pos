@@ -1,5 +1,7 @@
 package dev.cnpe.ventescabekotlin.config.jpa
 
+import dev.cnpe.ventescabekotlin.business.infrastructure.persistence.BusinessRepository
+import dev.cnpe.ventescabekotlin.currency.infrastructure.persistence.CurrencyRepository
 import jakarta.persistence.EntityManagerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
@@ -18,9 +20,9 @@ import javax.sql.DataSource
 //        "dev.cnpe.ventescabekotlin.currency.infra.persistence"
 //    ],
     basePackageClasses = [
-//        BusinessRepository::class,
-//        CurrencyRepository::class
-                         ],
+        BusinessRepository::class,
+        CurrencyRepository::class
+    ],
     entityManagerFactoryRef = "masterEntityManagerFactory",
     transactionManagerRef = "masterTransactionManager"
 )
