@@ -1,5 +1,6 @@
 package dev.cnpe.ventescabekotlin.tenant.service
 
+import dev.cnpe.ventescabekotlin.business.infrastructure.persistence.BusinessRepository
 import dev.cnpe.ventescabekotlin.tenant.TenantDataSource
 import dev.cnpe.ventescabekotlin.tenant.exception.TenantCreationException
 import dev.cnpe.ventescabekotlin.tenant.vo.TenantIdentifier
@@ -23,7 +24,7 @@ private val log = KotlinLogging.logger {}
 class TenantManagementService(
     @Qualifier("masterDataSource") private val masterDataSource: DataSource,
     private val tenantDataSource: TenantDataSource,
-    private val businessRepository: BusinessRepository // FIXME: Inject this once BusinessRepository.kt exists
+    private val businessRepository: BusinessRepository
 ) {
 
     companion object {
@@ -191,11 +192,7 @@ class TenantManagementService(
     @Transactional(readOnly = true, transactionManager = "masterTransactionManager")
     fun getTenantIds(): Set<String> {
         log.debug { "Querying master database for all distinct tenant IDs..." }
-        // FIXME: Replace with actual repository call once BusinessRepository is migrated
-        // return businessRepository.findAllDistinctTenantIds()
-        // Placeholder:
-        log.warn { "FIXME: TenantManagementService.getTenantIds() needs BusinessRepository implementation." }
-        return emptySet() // Return empty set until repository is available
+        return businessRepository.findAllDistinctTenantIds()
     }
 
     /**
