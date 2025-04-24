@@ -25,7 +25,9 @@ class SecurityConfig(
         http {
             authorizeHttpRequests {
                 authorize("/v3/api-docs/**", permitAll)
+                authorize("/swagger-ui.html", permitAll)
                 authorize("/swagger-ui/**", permitAll)
+                authorize("/favicon.ico", permitAll)
                 authorize(anyRequest, authenticated)
             }
             sessionManagement {
