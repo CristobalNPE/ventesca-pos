@@ -22,6 +22,15 @@ class UserContextPopulationFilter(
     private val userContext: RequestUserContext
 ) : OncePerRequestFilter() {
 
+    companion object {
+        private const val CLAIM_EMAIL = "email"
+        private const val CLAIM_PREFERRED_USERNAME = "preferred_username"
+        private const val CLAIM_REALM_ACCESS = "realm_access"
+        private const val CLAIM_ROLES = "roles"
+        private const val ROLE_PREFIX = "ROLE_"
+        private val IGNORED_ROLES = setOf("offline_access", "uma_authorization")
+    }
+
     override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
@@ -32,10 +41,12 @@ class UserContextPopulationFilter(
             val authentication = SecurityContextHolder.getContext().authentication
 
             if (authentication != null && authentication.isAuthenticated && authentication is JwtAuthenticationToken) {
+                val token = authentication.token
                 log.debug { "JWT Authentication found. Populating user context." }
-                userContext.userId = authentication.token.subject
-                userContext.email = authentication.token.getClaimAsString("email")
-                userContext.preferredUsername = authentication.token.getClaimAsString("preferred_username")
+
+                userContext.userId = token.subject
+                userContext.email = token.getClaimAsString(CLAIM_EMAIL)
+                userContext.preferredUsername = token.getClaimAsString(CLAIM_PREFERRED_USERNAME)
                 userContext.roles = extractRoles(authentication.authorities)
                 userContext.tenantId = TenantContext.getCurrentTenant()
             } else {
@@ -50,7 +61,7 @@ class UserContextPopulationFilter(
     private fun extractRoles(authorities: Collection<GrantedAuthority>): Set<String> {
         return authorities
             .map { it.authority }
-            .map { if (it.startsWith("ROLE_")) it.substring(5) else it }
+            .map { if (it.startsWith(ROLE_PREFIX)) it.substring(ROLE_PREFIX.length) else it }
             .toSet()
     }
 
