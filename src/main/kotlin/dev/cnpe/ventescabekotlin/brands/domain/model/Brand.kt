@@ -9,16 +9,16 @@ import jakarta.persistence.Table
 
 @Entity
 @Table(name = "brands")
-open class Brand(
+class Brand(
 
     @Column(name = "name", nullable = false)
-    open var name: String,
+    var name: String,
 
     @Embedded
-    open var code: GeneratedCode,
+    var code: GeneratedCode,
 
     @Column(name = "is_default", nullable = false)
-    open var isDefault: Boolean = false,
+    var isDefault: Boolean = false,
 
     id: Long? = null,
     version: Int = 0
