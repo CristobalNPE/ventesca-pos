@@ -6,13 +6,11 @@ import java.util.*
 
 /**
  * Represents a type-safe identifier for a tenant.
- * Uses Kotlin's value class for type safety with no runtime overhead.
  *
  * @property value The underlying string representation of the tenant ID.
  */
 @Embeddable
-@JvmInline
-final value class TenantIdentifier(
+data class TenantIdentifier(
     @Column(name = "tenant_id", nullable = false, updatable = false, unique = true)
     val value: String
 ) {
