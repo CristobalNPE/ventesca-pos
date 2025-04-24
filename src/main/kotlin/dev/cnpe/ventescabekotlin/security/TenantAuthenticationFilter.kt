@@ -1,6 +1,6 @@
 package dev.cnpe.ventescabekotlin.security
 
-import dev.cnpe.ventescabekotlin.business.BusinessDataPort
+import dev.cnpe.ventescabekotlin.business.application.api.BusinessDataPort
 import dev.cnpe.ventescabekotlin.tenant.TenantContext
 import dev.cnpe.ventescabekotlin.tenant.exception.TenantNotFoundException
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -18,6 +18,15 @@ private val log = KotlinLogging.logger {}
 class TenantAuthenticationFilter(
     private val businessDataPort: BusinessDataPort
 ) : OncePerRequestFilter() {
+
+    companion object {
+        private val EXCLUDED_PATHS = listOf(
+            "/admin/",
+            "/dev/",
+            "/v3/api-docs/",
+            "/swagger-ui"
+        )
+    }
 
     override fun doFilterInternal(
         request: HttpServletRequest,
@@ -61,10 +70,9 @@ class TenantAuthenticationFilter(
         }
     }
 
-    // TODO: Define which paths this filter should NOT apply to
-    // override fun shouldNotFilter(request: HttpServletRequest): Boolean {
-    //     val path = request.servletPath
-    //     return path.startsWith("/public/") || path.startsWith("/auth/") //
-    // }
+    override fun shouldNotFilter(request: HttpServletRequest): Boolean {
 
+        val path = request.servletPath
+        return EXCLUDED_PATHS.any { path.startsWith(it) }
+    }
 }
