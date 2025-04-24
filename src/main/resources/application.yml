@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: ventesca-be-kotlin
+
+
+app:
+  datasource:
+    # Master Datasource
+    master:
+      url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:ventesca_master_db}
+      username: ${MASTER_DB_USERNAME:postgres}
+      password: ${MASTER_DB_PASSWORD:postgres}
+      hikari:
+        maximum-pool-size: 5
+        pool-name: master-pool
+    # Tenant Datasource Configuration
+    tenant:
+      url-template: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/ventesca_{tenant}_db
+      username: ${MASTER_DB_USERNAME:postgres}
+      password: ${MASTER_DB_PASSWORD:postgres}
+      hikari: #
+        maximum-pool-size: 10
+        pool-name-prefix: tenant-pool-
+
+  hibernate:
+    debug: false
