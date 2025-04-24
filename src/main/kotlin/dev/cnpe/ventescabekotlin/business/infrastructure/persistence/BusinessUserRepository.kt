@@ -5,15 +5,18 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 
 interface BusinessUserRepository : JpaRepository<BusinessUser, Long> {
-    fun findByUserEmail(userEmail: String): BusinessUser?
 
     @Query(
         """
-            select b.tenantId.value
-            from BusinessUser  bu
-            join bu.business b
-            where bu.userEmail = :userEmail
+        select b.tenantId.value 
+        from BusinessUser bu 
+        join bu.business b 
+        where bu.idpUserId = :idpUserId 
         """
     )
-    fun findBusinessTenantIdByUserEmail(userEmail: String): String?
+    fun findTenantIdByIdpUserId(idpUserId: String): String?
+
+    fun findByIdpUserId(idpUserId: String): BusinessUser?
+
+    fun findByUserEmail(userEmail: String): BusinessUser?
 }

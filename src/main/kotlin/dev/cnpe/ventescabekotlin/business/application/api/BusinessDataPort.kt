@@ -10,11 +10,11 @@ import dev.cnpe.ventescabekotlin.business.dto.BusinessPaymentData
 interface BusinessDataPort {
 
     /**
-     * Finds the tenant identifier associated with a given user identifier (e.g., email).
+     * Finds the tenant identifier associated with a given user id from the IDP
      * Returns null if the user is not found or not associated with a tenant.
-     * Typically queries the master database.
+     * Typically, queries the master database.
      */
-    fun getTenantIdForUser(userEmail: String): String?
+    fun getTenantIdForUser(idpUserId: String): String?
 
     /**
      * Gets the current operational status of the business associated with the

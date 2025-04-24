@@ -7,13 +7,16 @@ import jakarta.persistence.*
 @Table(
     name = "business_users",
     indexes = [
-        Index(name = "idx_business_user_email", columnList = "user_email")
+        Index(name = "idx_business_user_idp_id", columnList = "idp_user_id", unique = true)
     ]
 )
 class BusinessUser(
 
-    @Column(name = "user_email", nullable = false, updatable = false)
-    val userEmail: String,
+    @Column(name = "idp_user_id", nullable = false, updatable = false, unique = true)
+    val idpUserId: String,
+
+    @Column(name = "user_email", nullable = true)
+    var userEmail: String?,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "business_id")
@@ -26,11 +29,16 @@ class BusinessUser(
     companion object {
 
         /**
-         * Factory method to create a BusinessUser instance from an email.
+         * Factory method to create a BusinessUser link instance.
+         * Requires the immutable ID from the Identity Provider.
+         *
+         * @param idpUserId The unique user ID from the IdP ('sub' claim).
+         * @param userEmail The user's email (optional, for informational purposes).
          */
-        fun fromEmail(userEmail: String): BusinessUser {
-            require(userEmail.isNotBlank()) { "User email cannot be blank" }
+        fun createLink(idpUserId: String, userEmail: String?): BusinessUser {
+            require(idpUserId.isNotBlank()) { "IdP User ID cannot be blank" }
             return BusinessUser(
+                idpUserId = idpUserId,
                 userEmail = userEmail,
                 business = null,
             )

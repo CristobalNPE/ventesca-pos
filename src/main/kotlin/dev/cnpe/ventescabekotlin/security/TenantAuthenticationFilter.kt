@@ -39,22 +39,22 @@ class TenantAuthenticationFilter(
             val authentication = SecurityContextHolder.getContext().authentication
 
             if (authentication != null && authentication.isAuthenticated && authentication is JwtAuthenticationToken) {
-                val userEmail = authentication.token.getClaimAsString("email")
+                val idpUserId = authentication.token.subject
 
-                if (userEmail.isNullOrBlank()) {
-                    log.warn { "Authenticated user token is missing 'email' claim. Cannot resolve tenant." }
+                if (idpUserId.isNullOrBlank()) {
+                    log.warn { "Authenticated user token is missing 'sub' claim. Cannot resolve tenant." }
+                    throw TenantNotFoundException(identifierTried = "sub_claim_missing")
                 } else {
-                    log.debug { "Attempting to resolve tenant for user email: $userEmail" }
-                    val tenantId = businessDataPort.getTenantIdForUser(userEmail)
+                    log.debug { "Attempting to resolve tenant for user IdP ID: $idpUserId for path ${request.servletPath}" }
+                    val tenantId = businessDataPort.getTenantIdForUser(idpUserId)
 
                     if (tenantId != null) {
-                        log.info { "🟢 Tenant resolved for user '$userEmail'. Setting tenant context to: [$tenantId]" }
+                        log.info { "🟢 Tenant resolved for user IdP ID '$idpUserId'. Setting tenant context to: [$tenantId]" }
                         TenantContext.setCurrentTenant(tenantId)
                         tenantIdSet = tenantId
                     } else {
-                        log.warn { "🔴 No business tenant found for user email: [$userEmail]. Access denied." }
-                        // throwing here stops the request and GlobalExceptionHandler provides response
-                        throw TenantNotFoundException(identifierTried = userEmail)
+                        log.warn { "🔴 No business tenant found for user IdP ID: [$idpUserId] for path ${request.servletPath}. Access denied." }
+                        throw TenantNotFoundException(identifierTried = idpUserId)
                     }
                 }
 

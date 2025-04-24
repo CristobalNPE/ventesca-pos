@@ -9,7 +9,8 @@ import dev.cnpe.ventescabekotlin.currency.infrastructure.persistence.CurrencyRep
 import dev.cnpe.ventescabekotlin.security.context.UserContext
 import dev.cnpe.ventescabekotlin.shared.application.exception.DomainException
 import dev.cnpe.ventescabekotlin.shared.application.exception.GeneralErrorCode
-import dev.cnpe.ventescabekotlin.shared.application.exception.GeneralErrorCode.*
+import dev.cnpe.ventescabekotlin.shared.application.exception.GeneralErrorCode.INSUFFICIENT_CONTEXT
+import dev.cnpe.ventescabekotlin.shared.application.exception.GeneralErrorCode.RESOURCE_NOT_FOUND
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -28,9 +29,9 @@ open class BusinessDataService(
 ) : BusinessDataPort {
 
     @Transactional(readOnly = true, transactionManager = "masterTransactionManager")
-    override fun getTenantIdForUser(userEmail: String): String? {
-        log.debug { "Querying master DB for tenant ID for user: $userEmail" }
-        return businessUserRepository.findBusinessTenantIdByUserEmail(userEmail)
+    override fun getTenantIdForUser(idpUserId: String): String? {
+        log.debug { "Querying master DB for tenant ID for user IdP ID: $idpUserId" }
+        return businessUserRepository.findTenantIdByIdpUserId(idpUserId)
     }
 
     override fun getCurrentBusinessStatus(): BusinessStatus {
@@ -90,23 +91,23 @@ open class BusinessDataService(
     /**
      * Retrieves the BusinessUser associated with the current request's authenticated user.
      * Uses the injected UserContext bean. Requires master transaction manager.
-     * Throws DomainException if user email is missing or user is not found in master DB.
+     * Throws DomainException if user IdP Id is missing or user is not found in master DB.
      */
     @Transactional(readOnly = true, transactionManager = "masterTransactionManager")
     protected fun getCurrentBusinessUserOrThrow(): BusinessUser {
-        // Get email from the request-scoped context bean
-        val currentUserEmail = userContext.email
+        // Get IdP ID (sub claim) from the request-scoped context bean
+        val currentUserIdpId = userContext.userId
             ?: throw DomainException(
                 errorCode = INSUFFICIENT_CONTEXT,
-                details = mapOf("missingContext" to "User Email"),
-                message = "Required user email not found in security context."
+                details = mapOf("missingContext" to "User IdP ID"),
+                message = "Required IdP User ID not found in security context."
             )
 
-        log.debug { "Querying master DB for BusinessUser: $currentUserEmail" }
-        return businessUserRepository.findByUserEmail(currentUserEmail)
+        log.debug { "Querying master DB for BusinessUser by IdP ID: $currentUserIdpId" }
+        return businessUserRepository.findByIdpUserId(currentUserIdpId)
             ?: throw DomainException(
                 RESOURCE_NOT_FOUND,
-                mapOf("entityType" to "BusinessUser", "email" to currentUserEmail)
+                mapOf("entityType" to "BusinessUser", "idpUserId" to currentUserIdpId)
             )
     }
 
