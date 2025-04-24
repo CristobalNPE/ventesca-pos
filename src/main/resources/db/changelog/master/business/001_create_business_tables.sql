@@ -1,6 +1,6 @@
 -- liquibase formatted sql
 
--- changeset Cristóbal:business-branches-001-create-table
+-- changeset Cristóbal:1745533394392-2
 CREATE TABLE business_branches
 (
     id                BIGINT                      NOT NULL,
@@ -21,14 +21,14 @@ CREATE TABLE business_branches
     CONSTRAINT pk_business_branches PRIMARY KEY (id)
 );
 
--- changeset Cristóbal:business-payment-methods-001-create-table
+-- changeset Cristóbal:1745533394392-3
 CREATE TABLE business_payment_methods
 (
     business_id    BIGINT       NOT NULL,
     payment_method VARCHAR(255) NOT NULL
 );
 
--- changeset Cristóbal:business-users-001-create-table
+-- changeset Cristóbal:1745533394392-4
 CREATE TABLE business_users
 (
     id               BIGINT                      NOT NULL,
@@ -37,12 +37,13 @@ CREATE TABLE business_users
     last_modified_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     created_by       VARCHAR(255)                NOT NULL,
     last_modified_by VARCHAR(255),
-    user_email       VARCHAR(255)                NOT NULL,
+    idp_user_id      VARCHAR(255)                NOT NULL,
+    user_email       VARCHAR(255),
     business_id      BIGINT,
     CONSTRAINT pk_business_users PRIMARY KEY (id)
 );
 
--- changeset Cristóbal:businesses-001-create-table
+-- changeset Cristóbal:1745533394392-5
 CREATE TABLE businesses
 (
     id                BIGINT                      NOT NULL,
@@ -67,22 +68,26 @@ CREATE TABLE businesses
     CONSTRAINT pk_businesses PRIMARY KEY (id)
 );
 
--- changeset Cristóbal:businesses-001-unique-tenantId
+-- changeset Cristóbal:1745533394392-6
+ALTER TABLE business_users
+    ADD CONSTRAINT uc_business_users_idp_user UNIQUE (idp_user_id);
+
+-- changeset Cristóbal:1745533394392-7
 ALTER TABLE businesses
     ADD CONSTRAINT uc_businesses_tenant UNIQUE (tenant_id);
 
--- changeset Cristóbal:businesses-001-idx-userEmail
-CREATE INDEX idx_business_user_email ON business_users (user_email);
+-- changeset Cristóbal:1745533394392-8
+CREATE UNIQUE INDEX idx_business_user_idp_id ON business_users (idp_user_id);
 
--- changeset Cristóbal:business-branches-001-fk-businessId
+-- changeset Cristóbal:1745533394392-9
 ALTER TABLE business_branches
     ADD CONSTRAINT FK_BUSINESS_BRANCHES_ON_BUSINESS FOREIGN KEY (business_id) REFERENCES businesses (id);
 
--- changeset Cristóbal:business-users-001-fk-businessId
+-- changeset Cristóbal:1745533394392-10
 ALTER TABLE business_users
     ADD CONSTRAINT FK_BUSINESS_USERS_ON_BUSINESS FOREIGN KEY (business_id) REFERENCES businesses (id);
 
--- changeset Cristóbal:business-payment-methods-001-fk-businessId
+-- changeset Cristóbal:1745533394392-11
 ALTER TABLE business_payment_methods
     ADD CONSTRAINT fk_business_payment_methods_on_business FOREIGN KEY (business_id) REFERENCES businesses (id);
 
