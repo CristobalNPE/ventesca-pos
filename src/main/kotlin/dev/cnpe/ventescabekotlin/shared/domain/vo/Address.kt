@@ -40,5 +40,11 @@ data class Address(
 ) {
     companion object {
         fun empty(): Address = Address(null, null, null, null)
+
+        fun buildAddress(street: String?, city: String?, zipCode: String?, country: String?): Address? {
+            return if (!street.isNullOrBlank() && !city.isNullOrBlank()) {
+                Address(street = street, city = city, postalCode = zipCode, country = country)
+            } else null
+        }
     }
 }
