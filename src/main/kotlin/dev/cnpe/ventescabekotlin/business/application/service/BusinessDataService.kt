@@ -45,7 +45,7 @@ open class BusinessDataService(
         return businessUser.business?.getMainBranch()?.id
             ?: throw DomainException(
                 RESOURCE_NOT_FOUND,
-                mapOf("entityType" to "Main BusinessBranch", "userId" to businessUser.userEmail)
+                mapOf("entityType" to "Main BusinessBranch", "idpUserId" to businessUser.idpUserId)
             )
     }
 
