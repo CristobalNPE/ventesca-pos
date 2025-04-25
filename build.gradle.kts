@@ -28,7 +28,7 @@ repositories {
 
 extra["springModulithVersion"] = "1.3.4"
 
-val mapstructVersion = "1.6.3"
+val keycloakVersion = "26.0.4"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
@@ -38,20 +38,22 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
+    implementation("org.keycloak:keycloak-admin-client:${keycloakVersion}")
+
     implementation("org.springframework.modulith:spring-modulith-starter-core")
     implementation("org.springframework.modulith:spring-modulith-starter-jpa")
 
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
     implementation("me.paulschwarz:spring-dotenv:4.0.0")
     implementation("io.github.oshai:kotlin-logging-jvm:7.0.7")
+    implementation("org.liquibase:liquibase-core")
 
+    implementation("org.jboss:jandex:3.3.0")
 
-//    implementation("org.mapstruct:mapstruct:${mapstructVersion}")
-//    kapt("org.mapstruct:mapstruct-processor:$mapstructVersion")
-//
-//    kapt("org.springframework.boot:spring-boot-configuration-processor")
-//    kapt("org.springframework.modulith:spring-modulith-apt:${property("springModulithVersion")}")
-
+////    // You might also need related dependencies depending on the client setup,
+////    // e.g., for REST client implementation used by keycloak-admin-client
+//    implementation("org.jboss.resteasy:resteasy-client:6.2.10.Final") // RESTEasy client needed by Keycloak client
+//    implementation("org.jboss.resteasy:resteasy-jackson2-provider:6.2.10.Final") // Jackson provider for RESTEasy
 
     developmentOnly("org.springframework.boot:spring-boot-docker-compose")
     runtimeOnly("org.postgresql:postgresql")
@@ -59,7 +61,11 @@ dependencies {
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+    testImplementation("io.kotest:kotest-assertions-core-jvm:5.9.1")
     testImplementation("org.springframework.modulith:spring-modulith-starter-test")
+    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:postgresql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
