@@ -19,7 +19,7 @@ data class PersonalInfo(
     @field:Column(name = "first_name", nullable = false)
     @field:NotBlank
     @field:Length(min = 1, max = 50)
-    val firstName: String?,
+    val firstName: String,
 
     @field:Schema(
         description = "Last or family name.",
@@ -40,10 +40,4 @@ data class PersonalInfo(
     @field:NotBlankIfPresent
     @field:Length(min = 2, max = 50)
     val personalId: String?
-) {
-    companion object {
-        fun empty(): PersonalInfo = PersonalInfo(null, null, null)
-    }
-
-    // val updatedInfo = originalInfo.copy(lastName = "Smith")
-}
+)
