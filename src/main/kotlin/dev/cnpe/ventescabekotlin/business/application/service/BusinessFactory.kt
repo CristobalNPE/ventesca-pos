@@ -117,45 +117,4 @@ class BusinessFactory(
             acceptedPaymentMethods = request.acceptedPaymentMethods
         )
     }
-
-    fun buildInitialMainBranch(request: AdminCreateBusinessRequest, adminUserId: String): BusinessBranch? {
-        val address = Address.buildAddress(
-            street = request.mainBranchStreet,
-            city = request.mainBranchCity,
-            zipCode = request.mainBranchZipCode,
-            country = request.mainBranchCountry
-        )
-
-        // only create branch if address could be created:
-        return address?.let { addr ->
-            BusinessBranch(
-                business = TODO("Placeholder: Business instance needed here - set by calling service"),
-                branchName = request.mainBranchName ?: "Main Office",  // TODO: handle default naming via MessageSource in service layer
-                address = addr,
-                isMainBranch = true,
-                branchManagerId = adminUserId,
-                branchContactNumber = request.contactPhone
-            )
-        }
-
-    }
-
-    fun buildBusinessBranch(request: CreateBusinessBranchRequest, managerId: String): BusinessBranch {
-        val address = Address.buildAddress(
-            street = request.addressStreet,
-            city = request.addressCity,
-            zipCode = request.addressZipCode,
-            country = request.addressCountry
-        ) ?: Address.empty() // Ensure address is not null for branch
-
-        return BusinessBranch(
-            business = TODO("Placeholder: Business instance needed here - set by calling service"),
-            branchName = request.branchName ?: "New Branch", // TODO: handle default naming via MessageSource in service layer
-            address = address,
-            isMainBranch = false,
-            branchManagerId = managerId,
-            branchContactNumber = request.contactNumber
-        )
-    }
-
 }
