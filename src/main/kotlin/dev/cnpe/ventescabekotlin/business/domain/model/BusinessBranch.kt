@@ -16,7 +16,7 @@ class BusinessBranch(
     var branchName: String,
 
     @Embedded
-    var address: Address = Address.empty(),
+    var address: Address,
 
     @Column(name = "contact_number")
     var branchContactNumber: String?,
