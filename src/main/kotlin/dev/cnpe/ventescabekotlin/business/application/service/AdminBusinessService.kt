@@ -2,20 +2,26 @@ package dev.cnpe.ventescabekotlin.business.application.service
 
 import dev.cnpe.ventescabekotlin.business.application.dto.request.AdminCreateBusinessRequest
 import dev.cnpe.ventescabekotlin.business.application.dto.response.BusinessDetailedResponse
-import dev.cnpe.ventescabekotlin.business.application.exception.BusinessErrorCode
+import dev.cnpe.ventescabekotlin.business.application.exception.BusinessErrorCode.ACTIVATION_FAILED
+import dev.cnpe.ventescabekotlin.business.application.exception.BusinessErrorCode.USER_ALREADY_LINKED
 import dev.cnpe.ventescabekotlin.business.application.mapper.BusinessMapper
+import dev.cnpe.ventescabekotlin.business.domain.enums.BusinessStatus
+import dev.cnpe.ventescabekotlin.business.domain.model.Business
 import dev.cnpe.ventescabekotlin.business.domain.model.BusinessBranch
 import dev.cnpe.ventescabekotlin.business.domain.model.BusinessUser
+import dev.cnpe.ventescabekotlin.business.event.BusinessActivatedEvent
 import dev.cnpe.ventescabekotlin.business.infrastructure.persistence.BusinessRepository
 import dev.cnpe.ventescabekotlin.business.infrastructure.persistence.BusinessUserRepository
 import dev.cnpe.ventescabekotlin.security.ports.IdentityProviderPort
 import dev.cnpe.ventescabekotlin.security.ports.dto.NewUserData
 import dev.cnpe.ventescabekotlin.shared.application.exception.DomainException
 import dev.cnpe.ventescabekotlin.shared.application.exception.createDuplicatedResourceException
+import dev.cnpe.ventescabekotlin.shared.application.exception.createResourceNotFoundException
 import dev.cnpe.ventescabekotlin.shared.domain.vo.Address
-import dev.cnpe.ventescabekotlin.tenant.service.TenantManagementService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.context.ApplicationEventPublisher
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
@@ -26,14 +32,14 @@ private val log = KotlinLogging.logger {}
 @Service
 class AdminBusinessService(
     private val idpPort: IdentityProviderPort,
-    private val tenantManagementService: TenantManagementService,
     private val businessFactory: BusinessFactory,
     private val businessRepository: BusinessRepository,
     private val businessUserRepository: BusinessUserRepository,
     private val businessMapper: BusinessMapper,
 
     @Qualifier("masterTransactionTemplate")
-    private val masterTransactionTemplate: TransactionTemplate // TODO: Define masterTransactionTemplate bean
+    private val masterTransactionTemplate: TransactionTemplate,
+    private val eventPublisher: ApplicationEventPublisher
 ) {
 
     companion object {
@@ -111,6 +117,37 @@ class AdminBusinessService(
         return businessMapper.toDetailedDto(savedBusiness)
     }
 
+
+    /**
+     * Activates a business, changing its status to ACTIVE.
+     * Typically performed by a Superuser after verifying setup completion.
+     * Requires the Business entity to be in a PENDING state and meet all prerequisites.
+     *
+     * @param businessId The ID of the business to activate.
+     * @return A detailed DTO of the activated business.
+     * @throws DomainException if the business cannot be found or activation prerequisites are not met.
+     */
+    fun activateBusiness(businessId: Long): BusinessDetailedResponse {
+
+        val activatedBusiness = masterTransactionTemplate.execute {
+            val business = businessRepository.findByIdOrNull(businessId)
+                ?: throw createResourceNotFoundException("Business", businessId)
+
+            log.info { "Attempting to activate business: ${business.details.businessName} (ID: ${business.id})" }
+            validateCanActivate(business)
+
+            business.updateStatus(BusinessStatus.ACTIVE, "Activated by Superuser")
+            val activated = businessRepository.save(business)
+
+            eventPublisher.publishEvent(BusinessActivatedEvent(business.id!!, business.details.businessName))
+            log.info { "✅ Business activated: ${business.details.businessName} (ID: ${business.id})" }
+            activated
+        } ?: throw IllegalStateException("Failed to activate business ID $businessId within transaction.")
+
+        return businessMapper.toDetailedDto(activatedBusiness)
+    }
+
+
     // needs to run within a master transaction
     private fun validateAdminCreateRequest(request: AdminCreateBusinessRequest) {
         log.debug { "Validating AdminCreateBusinessRequest..." }
@@ -129,12 +166,33 @@ class AdminBusinessService(
         // Check 3: Does admin user email already linked to another business?
         if (businessUserRepository.findByUserEmail(request.adminUserEmail) != null) {
             throw DomainException(
-                BusinessErrorCode.USER_ALREADY_LINKED,
+                USER_ALREADY_LINKED,
                 mapOf("field" to "adminUserEmail", "value" to request.adminUserEmail),
             )
         }
 
         // TODO: Add validation for Currency Code using CurrencyRepository?
         log.debug { "AdminCreateBusinessRequest validation passed." }
+    }
+
+    private fun validateCanActivate(business: Business) {
+        val reasons = mutableListOf<String>()
+
+        if (business.statusInfo?.status != BusinessStatus.PENDING) {
+            reasons.add("Business is not in PENDING state (Current: ${business.statusInfo?.status})")
+        }
+        if (business.adminId.isBlank()) reasons.add("Administrator ID not defined")
+        if (!business.hasValidDetails()) reasons.add("Business details are incomplete")
+        if (!business.hasValidContactInfo()) reasons.add("Business contact info is incomplete")
+        if (!business.hasValidConfiguration()) reasons.add("Business configuration is incomplete")
+        if (!business.hasMainBranch()) reasons.add("Main branch has not been defined")
+
+        if (reasons.isNotEmpty()) {
+            throw DomainException(
+                errorCode = ACTIVATION_FAILED,
+                details = mapOf("businessId" to business.id!!, "reasons" to reasons),
+            )
+        }
+        log.debug { "Business ${business.id} passed activation validation." }
     }
 }
