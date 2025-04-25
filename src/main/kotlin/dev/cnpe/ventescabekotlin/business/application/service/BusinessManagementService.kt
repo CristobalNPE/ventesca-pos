@@ -53,22 +53,7 @@ open class BusinessManagementService(
     }
 
 
-    // Question: Does it make sense that the Business admin can manage the state of the user? IMO is for the superuser
-//    /**
-//     * Activates the current user's business if all setup steps are complete.
-//     */
-//    fun activateBusiness() {
-//        val business = getCurrentUserBusinessOrThrow()
-//        log.info { "Attempting to activate business: ${business.details.businessName} (ID: ${business.id})" }
-//
-//        validateCanActivate(business)
-//
-//        business.updateStatus(BusinessStatus.ACTIVE, "Business setup completed") // Use entity method
-//        businessRepository.save(business) // Persist status change
-//
-//        eventPublisher.publishEvent(BusinessActivatedEvent(business.id!!, business.details.businessName))
-//        log.info { "✅ Business activated: ${business.details.businessName} (ID: ${business.id})" }
-//    }
+
 
     /**
      * Updates the basic details (name, brand message) of the current user's business.
@@ -236,27 +221,4 @@ open class BusinessManagementService(
                 mapOf("entityType" to "Business", "userIdpId" to currentUserIdpId)
             )
     }
-
-//    /**
-//     * Validates if a business meets the criteria to be activated.
-//     * Throws DomainException if activation cannot proceed.
-//     */
-//    private fun validateCanActivate(business: Business) {
-//        val reasons = mutableListOf<String>()
-//
-//        if (business.adminId.isBlank()) reasons.add("Administrator ID not defined")
-//        if (!business.hasValidDetails()) reasons.add("Business details are incomplete")
-//        if (!business.hasValidContactInfo()) reasons.add("Business contact info is incomplete")
-//        if (!business.hasValidConfiguration()) reasons.add("Business configuration is incomplete")
-//        if (!business.hasMainBranch()) reasons.add("Main branch has not been defined")
-//
-//        if (reasons.isNotEmpty()) {
-//            throw DomainException(
-//                errorCode = ACTIVATION_FAILED,
-//                details = mapOf("reasons" to reasons),
-//            )
-//        }
-//    }
-
-
 }
