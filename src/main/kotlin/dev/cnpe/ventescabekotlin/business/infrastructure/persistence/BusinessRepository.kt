@@ -26,4 +26,8 @@ interface BusinessRepository : JpaRepository<Business, Long> {
         """
     )
     fun findAllDistinctTenantIds(): Set<String>
+
+
+    fun existsByDetails_BusinessName(businessName: String): Boolean
+
 }
