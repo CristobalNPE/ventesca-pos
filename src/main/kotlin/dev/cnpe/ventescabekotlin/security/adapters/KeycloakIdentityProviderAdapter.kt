@@ -71,7 +71,7 @@ class KeycloakIdentityProviderAdapter(
                 val credential = CredentialRepresentation().apply {
                     type = CredentialRepresentation.PASSWORD
                     value = pwd
-                    isTemporary = false
+                    isTemporary = true
                 }
                 credentials = listOf(credential)
             }
@@ -157,6 +157,90 @@ class KeycloakIdentityProviderAdapter(
             return
         }
         assignRolesToUserInternal(userId, roles)
+    }
+
+    override fun findUserById(userId: String): UserIdentity? {
+        log.debug { "Finding user in Keycloak by ID: $userId" }
+        return try {
+            usersResource().get(userId)?.toRepresentation()?.let {
+                UserIdentity(
+                    id = it.id,
+                    email = it.email,
+                    username = it.username,
+                    firstName = it.firstName,
+                    lastName = it.lastName
+                )
+            }
+        } catch (nf: jakarta.ws.rs.NotFoundException) {
+            log.info { "User not found in Keycloak with ID: $userId" }
+            null
+        } catch (e: Exception) {
+            log.error(e) { "Exception finding Keycloak user $userId" }
+            throw IdpAccessException("Failed to find user $userId: ${e.message}", e)
+        }
+    }
+
+    override fun updateUserAttributes(
+        userId: String,
+        attributes: Map<String, String>
+    ) {
+        log.debug { "Updating attributes for Keycloak user ID: $userId with $attributes" }
+        try {
+            val userResource = usersResource().get(userId) ?: throw IdpUserNotFoundException(userId)
+            val userRep = userResource.toRepresentation()
+
+            val keycloakAttributes = attributes.mapValues { listOf(it.value) }
+
+            val newAttributes = (userRep.attributes ?: emptyMap()).toMutableMap()
+            newAttributes.putAll(keycloakAttributes)
+            userRep.attributes = newAttributes
+
+            userResource.update(userRep)
+            log.info { "Successfully updated attributes for user $userId" }
+
+        } catch (nf: jakarta.ws.rs.NotFoundException) {
+            log.error(nf) { "User $userId not found during attribute update." }
+            throw IdpUserNotFoundException(userId)
+        } catch (e: Exception) {
+            log.error(e) { "Exception updating attributes for user $userId" }
+            throw IdpAccessException("Failed update attributes for $userId: ${e.message}", e)
+        }
+    }
+
+    override fun deleteUser(userId: String) {
+        log.warn { "Attempting to delete Keycloak user ID: $userId" }
+        try {
+            val response = usersResource().delete(userId)
+            if (response.statusInfo.family == Response.Status.Family.SUCCESSFUL) {
+                log.info { "Successfully deleted Keycloak user ID: $userId" }
+            } else if (response.status == Response.Status.NOT_FOUND.statusCode) {
+                log.error { "User $userId not found during deletion attempt." }
+                throw IdpUserNotFoundException(userId)
+            } else {
+                val errorMsg = response.readEntity(String::class.java) ?: "Unknown Keycloak error"
+                log.error { "Keycloak user deletion failed for $userId. Status: ${response.status}, Reason: $errorMsg" }
+                throw IdpAccessException("Keycloak API error during delete: ${response.status} - $errorMsg")
+            }
+        } catch (nf: jakarta.ws.rs.NotFoundException) {
+            log.error(nf) { "User $userId not found during deletion." }
+            throw IdpUserNotFoundException(userId)
+        } catch (e: Exception) {
+            log.error(e) { "Exception during Keycloak user deletion for $userId" }
+            throw IdpAccessException("Failed to delete user $userId: ${e.message}", e)
+        }
+    }
+
+    override fun getUserAttributes(userId: String): Map<String, List<String>> {
+        log.debug { "Getting attributes for Keycloak user ID: $userId" }
+        try {
+            return usersResource().get(userId)?.toRepresentation()?.attributes ?: emptyMap()
+        } catch (nf: jakarta.ws.rs.NotFoundException) {
+            log.error(nf) { "User $userId not found when getting attributes." }
+            throw IdpUserNotFoundException(userId)
+        } catch (e: Exception) {
+            log.error(e) { "Exception getting attributes for user $userId" }
+            throw IdpAccessException("Failed get attributes for $userId: ${e.message}", e)
+        }
     }
 
 
