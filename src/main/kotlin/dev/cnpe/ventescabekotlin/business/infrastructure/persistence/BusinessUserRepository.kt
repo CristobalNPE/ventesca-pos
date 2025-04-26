@@ -31,4 +31,20 @@ interface BusinessUserRepository : JpaRepository<BusinessUser, Long> {
         """
     )
     fun findBusinessStatusByIdpUserId(idpUserId: String): BusinessStatus?
+
+    @Query(
+        """
+        select bu.idpUserId
+        from BusinessUser bu
+        where bu.business.id = :businessId
+        """
+    )
+    fun findAllIdpUserIdsByBusinessId(businessId: Long): List<String>
+
+    fun countByBusinessId(businessId: Long): Long
+
+    fun deleteByIdpUserId(idpUserId: String): Long
+
+    fun findAllByBusinessId(businessId: Long): List<BusinessUser>
+
 }
