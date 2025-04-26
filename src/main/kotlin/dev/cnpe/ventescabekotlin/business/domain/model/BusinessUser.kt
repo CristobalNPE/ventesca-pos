@@ -18,6 +18,14 @@ class BusinessUser(
     @Column(name = "user_email", nullable = true)
     var userEmail: String?,
 
+    @Column(name = "display_name", nullable = true)
+    var displayName: String?,
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "business_user_assigned_roles", joinColumns = [JoinColumn(name = "business_user_id")])
+    @Column(name = "role_name", nullable = false)
+    var roles: MutableSet<String> = mutableSetOf(),
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "business_id")
     var business: Business?,
@@ -35,14 +43,20 @@ class BusinessUser(
          * @param idpUserId The unique user ID from the IdP ('sub' claim).
          * @param userEmail The user's email (optional, for informational purposes).
          */
-        fun createLink(idpUserId: String, userEmail: String?): BusinessUser {
+        fun createLink(
+            idpUserId: String,
+            userEmail: String?,
+            displayName: String?,
+            roles: Set<String>
+        ): BusinessUser {
             require(idpUserId.isNotBlank()) { "IdP User ID cannot be blank" }
             return BusinessUser(
                 idpUserId = idpUserId,
                 userEmail = userEmail,
+                displayName = displayName,
+                roles = roles.toMutableSet(),
                 business = null,
             )
         }
     }
-
 }
