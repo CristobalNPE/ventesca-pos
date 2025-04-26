@@ -1,6 +1,7 @@
 package dev.cnpe.ventescabekotlin.catalog.application.dto.request
 
 import dev.cnpe.ventescabekotlin.catalog.domain.enums.ProductStatus
+import dev.cnpe.ventescabekotlin.inventory.domain.enums.StockUnitType
 import dev.cnpe.ventescabekotlin.shared.domain.vo.Image
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.DecimalMin
@@ -36,7 +37,7 @@ data class CreateProductRequest(
 
     @field:NotNull
     @Schema(description = "Unit of measure for stock.", example = "UNIT")
-    val stockUnitType: StockUnitType, // TODO: Replace with actual enum type when migrated
+    val stockUnitType: StockUnitType,
 
     @field:NotNull
     @Schema(description = "ID of the associated category.", example = "101")
