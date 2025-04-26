@@ -17,10 +17,6 @@ import javax.sql.DataSource
 
 @Configuration
 @EnableJpaRepositories(
-//    basePackages = [
-//        "dev.cnpe.ventescabekotlin.business.infra.persistence",
-//        "dev.cnpe.ventescabekotlin.currency.infra.persistence"
-//    ],
     basePackageClasses = [
         BusinessRepository::class,
         CurrencyRepository::class
