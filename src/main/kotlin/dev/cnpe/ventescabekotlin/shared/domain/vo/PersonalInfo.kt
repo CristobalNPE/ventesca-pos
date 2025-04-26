@@ -40,4 +40,8 @@ data class PersonalInfo(
     @field:NotBlankIfPresent
     @field:Length(min = 2, max = 50)
     val personalId: String?
-)
+){
+    companion object {
+        fun empty(): PersonalInfo = PersonalInfo("", null, null)
+    }
+}
