@@ -8,7 +8,6 @@ import dev.cnpe.ventescabekotlin.business.infrastructure.persistence.BusinessUse
 import dev.cnpe.ventescabekotlin.currency.infrastructure.persistence.CurrencyRepository
 import dev.cnpe.ventescabekotlin.security.context.UserContext
 import dev.cnpe.ventescabekotlin.shared.application.exception.DomainException
-import dev.cnpe.ventescabekotlin.shared.application.exception.GeneralErrorCode
 import dev.cnpe.ventescabekotlin.shared.application.exception.GeneralErrorCode.INSUFFICIENT_CONTEXT
 import dev.cnpe.ventescabekotlin.shared.application.exception.GeneralErrorCode.RESOURCE_NOT_FOUND
 import io.github.oshai.kotlinlogging.KotlinLogging
