@@ -21,6 +21,10 @@ app:
   tenant:
     schema:
       auto-update-on-startup: true # false in prod ⚠
+  business:
+    limits:
+      max-users-per-business: ${MAX_SELLERS_PER_BUSINESS:10}
+      max-branches-per-business: ${MAX_BRANCHES_PER_BUSINESS:5}
   datasource:
     # Master Datasource
     master:
