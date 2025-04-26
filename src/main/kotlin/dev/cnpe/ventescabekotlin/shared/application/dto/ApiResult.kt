@@ -13,7 +13,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 @Schema(description = "Standard API response wrapper for success or error outcomes.")
 class ApiResult<T> private constructor(
 
-    @Schema(description = "Indicates if the request was successful.", required = true)
+    @Schema(description = "Indicates if the request was successful.", required = true, example = "false")
     val success: Boolean,
 
     @Schema(
