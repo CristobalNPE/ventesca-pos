@@ -12,15 +12,19 @@ import dev.cnpe.ventescabekotlin.business.domain.model.BusinessUser
 import dev.cnpe.ventescabekotlin.business.event.BusinessActivatedEvent
 import dev.cnpe.ventescabekotlin.business.infrastructure.persistence.BusinessRepository
 import dev.cnpe.ventescabekotlin.business.infrastructure.persistence.BusinessUserRepository
+import dev.cnpe.ventescabekotlin.currency.infrastructure.persistence.CurrencyRepository
 import dev.cnpe.ventescabekotlin.security.ports.IdentityProviderPort
 import dev.cnpe.ventescabekotlin.security.ports.dto.NewUserData
 import dev.cnpe.ventescabekotlin.shared.application.exception.DomainException
+import dev.cnpe.ventescabekotlin.shared.application.exception.GeneralErrorCode.INVALID_DATA
 import dev.cnpe.ventescabekotlin.shared.application.exception.createDuplicatedResourceException
 import dev.cnpe.ventescabekotlin.shared.application.exception.createResourceNotFoundException
 import dev.cnpe.ventescabekotlin.shared.domain.vo.Address
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.context.MessageSource
+import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
@@ -39,7 +43,9 @@ class AdminBusinessService(
 
     @Qualifier("masterTransactionTemplate")
     private val masterTransactionTemplate: TransactionTemplate,
-    private val eventPublisher: ApplicationEventPublisher
+    private val eventPublisher: ApplicationEventPublisher,
+    private val messageSource: MessageSource,
+    private val currencyRepository: CurrencyRepository
 ) {
 
     companion object {
@@ -92,9 +98,17 @@ class AdminBusinessService(
                 zipCode = request.mainBranchZipCode
             ) ?: Address.empty()
 
+            val branchName = request.mainBranchName.takeUnless { it.isNullOrBlank() }
+                ?: messageSource.getMessage(
+                    "default.branch.main.name",
+                    null,
+                    "Main Store",
+                    LocaleContextHolder.getLocale()
+                )
+
             val mainBranch = BusinessBranch(
                 business = businessShell,
-                branchName = request.mainBranchName ?: "PLACEHOLDER", //TODO: USE MESSAGE SOURCE
+                branchName = branchName!!,
                 address = mainBranchAddress,
                 branchContactNumber = request.contactPhone,
                 isMainBranch = true,
@@ -105,7 +119,16 @@ class AdminBusinessService(
             val saved = businessRepository.save(businessShell)
             log.info { "Business entity saved to master DB. ID: ${saved.id}, Tenant: ${saved.tenantId.value}" }
 
-            val businessUserLink = BusinessUser.createLink(idpUser.id, request.adminUserEmail)
+            val displayName = "${idpUser.firstName ?: ""} ${idpUser.lastName ?: ""}".trim()
+                .ifEmpty { idpUser.username ?: idpUser.email }
+            val rolesSet = setOf(ROLE_BUSINESS_ADMIN)
+
+            val businessUserLink = BusinessUser.createLink(
+                idpUserId = idpUser.id,
+                userEmail = request.adminUserEmail,
+                displayName = displayName,
+                roles = rolesSet,
+            )
             businessUserLink.business = saved
             businessUserRepository.save(businessUserLink)
             log.info { "BusinessUser link saved for IdP User ${idpUser.id} to Business ${saved.id}" }
@@ -171,7 +194,13 @@ class AdminBusinessService(
             )
         }
 
-        // TODO: Add validation for Currency Code using CurrencyRepository?
+        // Check 4: Currency Code Validation
+        if (!currencyRepository.existsByCodeAndIsActiveTrue(request.currencyCode)) {
+            throw DomainException(
+                INVALID_DATA,
+                mapOf("field" to "currencyCode", "value" to request.currencyCode)
+            )
+        }
         log.debug { "AdminCreateBusinessRequest validation passed." }
     }
 
