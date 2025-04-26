@@ -41,7 +41,7 @@ interface IdentityProviderPort {
      * @throws IdpAccessException for general communication errors with the IdP.
      */
     @Throws(IdpAccessException::class)
-    fun findUserByEmail(email:String): UserIdentity?
+    fun findUserByEmail(email: String): UserIdentity?
 
     /**
      * Assigns a set of application roles to an existing user in the IdP.
@@ -55,9 +55,20 @@ interface IdentityProviderPort {
     @Throws(IdpUserNotFoundException::class, IdpAccessException::class)
     fun assignRolesToUser(userId: String, roles: Set<String>)
 
-    // --- Future Methods ---
-    // fun findUserById(userId: String): UserIdentity?
-    // fun updateUserAttributes(userId: String, attributes: Map<String, String>)
-    // fun deleteUser(userId: String)
-    // fun setUserPassword(userId: String, password: String, temporary: Boolean = true)
+    /** Finds a user by their unique IdP ID. */
+    @Throws(IdpAccessException::class)
+    fun findUserById(userId: String): UserIdentity?
+
+    /** Updates attributes for an existing user (e.g., name, custom attributes). */
+    @Throws(IdpUserNotFoundException::class, IdpAccessException::class)
+    fun updateUserAttributes(userId: String, attributes: Map<String, String>) // Attributes to update/add
+
+    /** Deletes a user from the IdP. Use with caution! */
+    @Throws(IdpUserNotFoundException::class, IdpAccessException::class)
+    fun deleteUser(userId: String)
+
+    /** Gets the custom attributes for a user (needed to check tenant_id). */
+    @Throws(IdpUserNotFoundException::class, IdpAccessException::class)
+    fun getUserAttributes(userId: String): Map<String, List<String>> // Keycloak stores attributes as List<String>
+
 }
