@@ -4,6 +4,7 @@ import dev.cnpe.ventescabekotlin.brands.infrastructure.BrandRepository
 import dev.cnpe.ventescabekotlin.business.infrastructure.persistence.BusinessRepository
 import dev.cnpe.ventescabekotlin.categories.infrastructure.CategoryRepository
 import dev.cnpe.ventescabekotlin.currency.infrastructure.persistence.CurrencyRepository
+import dev.cnpe.ventescabekotlin.suppliers.infrastructure.persistence.SupplierRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.persistence.EntityManagerFactory
 import org.hibernate.context.spi.CurrentTenantIdentifierResolver
@@ -11,7 +12,6 @@ import org.hibernate.engine.jdbc.connections.spi.MultiTenantConnectionProvider
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.*
-import org.springframework.data.jpa.repository.config.EnableJpaAuditing
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.orm.jpa.JpaTransactionManager
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean
@@ -23,12 +23,12 @@ private val log = KotlinLogging.logger {}
 @Configuration
 @EnableJpaRepositories(
     basePackages = [
-//        "dev.cnpe.ventescabekotlin",
         "org.springframework.modulith.events.jpa" // for modulith event publication repo
     ],
     basePackageClasses = [
         BrandRepository::class,
-        CategoryRepository::class
+        CategoryRepository::class,
+        SupplierRepository::class
     ],
     excludeFilters = [
         ComponentScan.Filter(
@@ -78,7 +78,7 @@ class TenantJpaConfig : BaseJpaConfig() {
             "dev.cnpe.ventescabekotlin.brands.domain",
             "dev.cnpe.ventescabekotlin.categories.domain",
             "dev.cnpe.ventescabekotlin.suppliers.domain",
-            "dev.cnpe.ventescabekotlin.catalog.domain",
+            "dev.cnpe.ventescabekotlin.catalog.domain.model",
             "dev.cnpe.ventescabekotlin.inventory.domain",
             "dev.cnpe.ventescabekotlin.shared.domain",
             "org.springframework.modulith.events.jpa"
