@@ -11,8 +11,8 @@
 
     <includeAll path="tenants/brands" relativeToChangelogFile="true"/>
     <includeAll path="tenants/categories" relativeToChangelogFile="true"/>
+    <includeAll path="tenants/catalog" relativeToChangelogFile="true"/>
 <!--    <includeAll path="tenants/inventory" relativeToChangelogFile="true"/>-->
-<!--    <includeAll path="tenants/products" relativeToChangelogFile="true"/>-->
 <!--    <includeAll path="tenants/suppliers" relativeToChangelogFile="true"/>-->
 
 
