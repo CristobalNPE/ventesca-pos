@@ -2,6 +2,8 @@ package dev.cnpe.ventescabekotlin.config.jpa
 
 import dev.cnpe.ventescabekotlin.brands.infrastructure.BrandRepository
 import dev.cnpe.ventescabekotlin.business.infrastructure.persistence.BusinessRepository
+import dev.cnpe.ventescabekotlin.catalog.infrastructure.persistence.ProductPriceRepository
+import dev.cnpe.ventescabekotlin.catalog.infrastructure.persistence.ProductRepository
 import dev.cnpe.ventescabekotlin.categories.infrastructure.CategoryRepository
 import dev.cnpe.ventescabekotlin.currency.infrastructure.persistence.CurrencyRepository
 import dev.cnpe.ventescabekotlin.suppliers.infrastructure.persistence.SupplierRepository
@@ -28,7 +30,9 @@ private val log = KotlinLogging.logger {}
     basePackageClasses = [
         BrandRepository::class,
         CategoryRepository::class,
-        SupplierRepository::class
+        SupplierRepository::class,
+        ProductRepository::class,
+        ProductPriceRepository::class
     ],
     excludeFilters = [
         ComponentScan.Filter(
