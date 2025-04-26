@@ -30,4 +30,14 @@ interface BusinessRepository : JpaRepository<Business, Long> {
 
     fun existsByDetails_BusinessName(businessName: String): Boolean
 
+    fun findByTenantIdValue(tenantId: String): Business?
+
+    @Query(
+        """
+        select count(b)
+        from BusinessBranch b
+        where b.business.id = :businessId
+        """
+    )
+    fun countBranchesById(businessId: Long): Long
 }
