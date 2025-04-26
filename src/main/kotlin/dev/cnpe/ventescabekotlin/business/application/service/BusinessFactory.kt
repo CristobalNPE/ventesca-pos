@@ -1,19 +1,16 @@
 package dev.cnpe.ventescabekotlin.business.application.service
 
 import dev.cnpe.ventescabekotlin.business.application.dto.request.AdminCreateBusinessRequest
-import dev.cnpe.ventescabekotlin.business.application.dto.request.CreateBusinessBranchRequest
 import dev.cnpe.ventescabekotlin.business.application.dto.request.UpdateBusinessBasicsRequest
 import dev.cnpe.ventescabekotlin.business.application.dto.request.UpdateBusinessConfigurationRequest
 import dev.cnpe.ventescabekotlin.business.application.dto.request.UpdateBusinessContactInfoRequest
 import dev.cnpe.ventescabekotlin.business.domain.enums.BusinessStatus
 import dev.cnpe.ventescabekotlin.business.domain.enums.PaymentMethod
 import dev.cnpe.ventescabekotlin.business.domain.model.Business
-import dev.cnpe.ventescabekotlin.business.domain.model.BusinessBranch
 import dev.cnpe.ventescabekotlin.business.domain.vo.BusinessConfiguration
 import dev.cnpe.ventescabekotlin.business.domain.vo.BusinessContactInfo
 import dev.cnpe.ventescabekotlin.business.domain.vo.BusinessDetails
 import dev.cnpe.ventescabekotlin.business.domain.vo.BusinessStatusInfo
-import dev.cnpe.ventescabekotlin.shared.domain.vo.Address
 import dev.cnpe.ventescabekotlin.tenant.service.TenantManagementService
 import dev.cnpe.ventescabekotlin.tenant.vo.TenantIdentifier
 import io.github.oshai.kotlinlogging.KotlinLogging
