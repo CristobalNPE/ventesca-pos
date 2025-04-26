@@ -1,5 +1,6 @@
 package dev.cnpe.ventescabekotlin.catalog.application.service
 
+import dev.cnpe.ventescabekotlin.brands.application.api.BrandInfoPort
 import dev.cnpe.ventescabekotlin.business.application.api.BusinessDataPort
 import dev.cnpe.ventescabekotlin.catalog.application.dto.common.ProductPricingData
 import dev.cnpe.ventescabekotlin.catalog.application.dto.request.CreateProductDraftRequest
@@ -11,11 +12,15 @@ import dev.cnpe.ventescabekotlin.catalog.application.dto.response.ProductSummary
 import dev.cnpe.ventescabekotlin.catalog.application.factory.ProductFactory
 import dev.cnpe.ventescabekotlin.catalog.application.mapper.ProductMapper
 import dev.cnpe.ventescabekotlin.catalog.application.util.ProductUtils
+import dev.cnpe.ventescabekotlin.catalog.event.ProductCreatedEvent
 import dev.cnpe.ventescabekotlin.catalog.infrastructure.persistence.ProductPriceRepository
 import dev.cnpe.ventescabekotlin.catalog.infrastructure.persistence.ProductRepository
+import dev.cnpe.ventescabekotlin.categories.application.api.CategoryInfoPort
+import dev.cnpe.ventescabekotlin.inventory.application.api.InventoryInfoPort
+import dev.cnpe.ventescabekotlin.inventory.domain.enums.StockUnitType
 import dev.cnpe.ventescabekotlin.shared.application.dto.PageResponse
 import dev.cnpe.ventescabekotlin.shared.application.exception.DomainException
-import dev.cnpe.ventescabekotlin.shared.application.exception.GeneralErrorCode
+import dev.cnpe.ventescabekotlin.shared.application.exception.GeneralErrorCode.INVALID_DATA
 import dev.cnpe.ventescabekotlin.shared.application.exception.GeneralErrorCode.INVALID_STATE
 import dev.cnpe.ventescabekotlin.shared.application.exception.createDuplicatedResourceException
 import dev.cnpe.ventescabekotlin.shared.application.exception.createResourceNotFoundException
@@ -36,11 +41,10 @@ class ProductService(
     private val productPriceRepository: ProductPriceRepository,
     private val productFactory: ProductFactory,
     private val productMapper: ProductMapper,
-    private val inventoryInfoPort: InventoryInfoPort, // FIXME: Inject Inventory Port
     private val businessDataPort: BusinessDataPort,
     private val productUtils: ProductUtils,
     private val eventPublisher: ApplicationEventPublisher,
-    // FIXME: Inject InfoPorts for default IDs needed by createDraft
+    private val inventoryInfoPort: InventoryInfoPort,
     private val categoryInfoPort: CategoryInfoPort,
     private val brandInfoPort: BrandInfoPort,
     private val supplierInfoPort: SupplierInfoPort
@@ -54,7 +58,6 @@ class ProductService(
         val defaultCategoryId = categoryInfoPort.getDefaultCategoryId()
         val defaultBrandId = brandInfoPort.getDefaultBrandId()
         val defaultSupplierId = supplierInfoPort.getDefaultSupplierId()
-
 
         val newProductDraft = productFactory.createDraft(
             barcode = request.barcode,
@@ -96,7 +99,6 @@ class ProductService(
         val product = productRepository.findByIdOrNull(id)
             ?: throw createResourceNotFoundException("Product", id)
 
-        // FIXME: Replace with actual Inventory Port call
         val itemInfo = inventoryInfoPort.getInventoryItemInfo(id)
         val businessPaymentData = businessDataPort.getBusinessPaymentData()
 
@@ -121,9 +123,8 @@ class ProductService(
     @Transactional(readOnly = true)
     fun getAllProductSummaries(pageable: Pageable): PageResponse<ProductSummaryResponse> {
         log.debug { "Fetching product summaries page: $pageable" }
-        val productPage = productRepository.findAll(pageable)
+        val productPage = productRepository.findAllWithPriceHistory(pageable)
 
-        //TODO: Optimize summary query if needed (e.g., custom query with joins)
         return PageResponse.from(productPage.map { productMapper.toSummary(it) })
 
     }
@@ -158,6 +159,23 @@ class ProductService(
         if (productRepository.existsByBarcode(request.barcode)) {
             throw createDuplicatedResourceException("barcode", request.barcode)
         }
-        // TODO: Add validation for relationship IDs (Category, Brand, Supplier exist?) - Requires InfoPorts
+        // validate relations
+        try {
+            categoryInfoPort.getCategoryCodeById(request.categoryId)
+        } catch (e: DomainException) {
+            throw DomainException(INVALID_DATA, details = mapOf("field" to "categoryId"))
+        }
+
+        try {
+            brandInfoPort.getBrandCodeById(request.brandId)
+        } catch (e: DomainException) {
+            throw DomainException(INVALID_DATA, details = mapOf("field" to "brandId"))
+        }
+
+        try {
+            supplierInfoPort.getSupplierNameById(request.categoryId)
+        } catch (e: DomainException) {
+            throw DomainException(INVALID_DATA, details = mapOf("field" to "supplierId"))
+        }
     }
 }
