@@ -6,6 +6,7 @@ import dev.cnpe.ventescabekotlin.catalog.infrastructure.persistence.ProductPrice
 import dev.cnpe.ventescabekotlin.catalog.infrastructure.persistence.ProductRepository
 import dev.cnpe.ventescabekotlin.categories.infrastructure.CategoryRepository
 import dev.cnpe.ventescabekotlin.currency.infrastructure.persistence.CurrencyRepository
+import dev.cnpe.ventescabekotlin.inventory.infrastructure.persistence.InventoryItemRepository
 import dev.cnpe.ventescabekotlin.suppliers.infrastructure.persistence.SupplierRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.persistence.EntityManagerFactory
@@ -32,7 +33,8 @@ private val log = KotlinLogging.logger {}
         CategoryRepository::class,
         SupplierRepository::class,
         ProductRepository::class,
-        ProductPriceRepository::class
+        ProductPriceRepository::class,
+        InventoryItemRepository::class
     ],
     excludeFilters = [
         ComponentScan.Filter(
