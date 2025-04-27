@@ -10,7 +10,7 @@ import dev.cnpe.ventescabekotlin.catalog.application.dto.response.ProductPriceIn
 import dev.cnpe.ventescabekotlin.catalog.application.dto.response.ProductSummaryResponse
 import dev.cnpe.ventescabekotlin.catalog.domain.model.Product
 import dev.cnpe.ventescabekotlin.catalog.domain.model.ProductPrice
-import dev.cnpe.ventescabekotlin.inventory.application.api.dto.InventoryItemInfo
+import dev.cnpe.ventescabekotlin.inventory.application.api.dto.ProductInventorySummary
 import dev.cnpe.ventescabekotlin.shared.application.dto.ResourceAuditData
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
@@ -54,7 +54,7 @@ class ProductMapper {
     fun toDetailed(
         product: Product,
         pricingData: ProductPricingData,
-        inventoryItemInfo: InventoryItemInfo
+        stockData: ProductStockData
     ): ProductDetailedResponse {
         return ProductDetailedResponse(
             id = product.id!!,
@@ -66,11 +66,7 @@ class ProductMapper {
                 status = product.status
             ),
             pricing = pricingData,
-            stockInfo = ProductStockData(
-                currentQuantity = inventoryItemInfo.stockQuantity,
-                minimumQuantity = inventoryItemInfo.minimumQuantity,
-                unitOfMeasure = inventoryItemInfo.unitOfMeasure
-            ),
+            stockInfo = stockData,
             photos = product.photos,
             relations = ProductRelationsData(
                 categoryId = product.categoryId,
