@@ -10,6 +10,7 @@ interface InventoryInfoPort {
      *
      * @param productId The ID of the product.
      * @return InventoryItemInfo containing stock details, its assumed that every products has inventory initialized.
+     * @throws DomainException if the product is not found or has no inventory items.
      */
     fun getInventoryItemInfo(productId: Long): InventoryItemInfo
 }
