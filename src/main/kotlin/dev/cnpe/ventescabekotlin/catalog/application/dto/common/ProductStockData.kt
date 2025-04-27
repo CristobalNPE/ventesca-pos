@@ -8,7 +8,7 @@ data class ProductStockData(
     @Schema(description = "Current total quantity across all locations.")
     val currentQuantity: Double?,
 
-    @Schema(description = "Configured minimum quantity level.")
+    @Schema(description = "Configured minimum quantity level.", nullable = true)
     val minimumQuantity: Double?,
 
     @Schema(description = "Unit of measure (e.g., UNIT, KG).")
