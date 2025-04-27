@@ -10,15 +10,15 @@ data class UpdateProductRelationsRequest(
     @field:NotNull
     @field:Positive
     @Schema(description = "ID of the new category.", example = "102")
-    val categoryId: Long?,
+    val categoryId: Long,
 
     @field:NotNull
     @field:Positive
     @Schema(description = "ID of the new brand.", example = "203")
-    val brandId: Long?,
+    val brandId: Long,
 
     @field:NotNull
     @field:Positive
     @Schema(description = "ID of the new supplier.", example = "304")
-    val supplierId: Long?
+    val supplierId: Long
 )
