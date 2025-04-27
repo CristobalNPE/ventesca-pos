@@ -3,6 +3,7 @@ package dev.cnpe.ventescabekotlin.catalog.application.service
 import dev.cnpe.ventescabekotlin.brands.application.api.BrandInfoPort
 import dev.cnpe.ventescabekotlin.business.application.api.BusinessDataPort
 import dev.cnpe.ventescabekotlin.catalog.application.dto.common.ProductPricingData
+import dev.cnpe.ventescabekotlin.catalog.application.dto.common.ProductStockData
 import dev.cnpe.ventescabekotlin.catalog.application.dto.request.CreateProductDraftRequest
 import dev.cnpe.ventescabekotlin.catalog.application.dto.request.CreateProductRequest
 import dev.cnpe.ventescabekotlin.catalog.application.dto.response.ProductCreatedResponse
@@ -100,7 +101,7 @@ class ProductService(
         val product = productRepository.findByIdOrNull(id)
             ?: throw createResourceNotFoundException("Product", id)
 
-        val itemInfo = inventoryInfoPort.getInventoryItemInfo(id)
+        val inventorySummary = inventoryInfoPort.getInventorySummary(id)
         val businessPaymentData = businessDataPort.getBusinessPaymentData()
 
         val currentPrice = product.getCurrentPrice()
@@ -118,7 +119,13 @@ class ProductService(
             currentProfitMargin = currentPrice.calculateProfitMargin()
         )
 
-        return productMapper.toDetailed(product, pricingData, itemInfo)
+        val productStockData = ProductStockData(
+            currentQuantity = inventorySummary.totalStockQuantity,
+            minimumQuantity = inventorySummary.representativeMinimumQuantity,
+            unitOfMeasure = inventorySummary.unitOfMeasure
+        )
+
+        return productMapper.toDetailed(product, pricingData, productStockData)
     }
 
     @Transactional(readOnly = true)
