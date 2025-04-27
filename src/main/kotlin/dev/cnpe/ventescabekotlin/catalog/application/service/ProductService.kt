@@ -12,6 +12,7 @@ import dev.cnpe.ventescabekotlin.catalog.application.dto.response.ProductSummary
 import dev.cnpe.ventescabekotlin.catalog.application.factory.ProductFactory
 import dev.cnpe.ventescabekotlin.catalog.application.mapper.ProductMapper
 import dev.cnpe.ventescabekotlin.catalog.application.util.ProductUtils
+import dev.cnpe.ventescabekotlin.catalog.application.validation.ProductRelationValidator
 import dev.cnpe.ventescabekotlin.catalog.event.ProductCreatedEvent
 import dev.cnpe.ventescabekotlin.catalog.infrastructure.persistence.ProductPriceRepository
 import dev.cnpe.ventescabekotlin.catalog.infrastructure.persistence.ProductRepository
@@ -20,7 +21,6 @@ import dev.cnpe.ventescabekotlin.inventory.application.api.InventoryInfoPort
 import dev.cnpe.ventescabekotlin.inventory.domain.enums.StockUnitType
 import dev.cnpe.ventescabekotlin.shared.application.dto.PageResponse
 import dev.cnpe.ventescabekotlin.shared.application.exception.DomainException
-import dev.cnpe.ventescabekotlin.shared.application.exception.GeneralErrorCode.INVALID_DATA
 import dev.cnpe.ventescabekotlin.shared.application.exception.GeneralErrorCode.INVALID_STATE
 import dev.cnpe.ventescabekotlin.shared.application.exception.createDuplicatedResourceException
 import dev.cnpe.ventescabekotlin.shared.application.exception.createResourceNotFoundException
@@ -47,7 +47,8 @@ class ProductService(
     private val inventoryInfoPort: InventoryInfoPort,
     private val categoryInfoPort: CategoryInfoPort,
     private val brandInfoPort: BrandInfoPort,
-    private val supplierInfoPort: SupplierInfoPort
+    private val supplierInfoPort: SupplierInfoPort,
+    private val relationValidator: ProductRelationValidator
 ) {
 
     fun createProductDraft(request: CreateProductDraftRequest): ProductCreatedResponse {
@@ -159,23 +160,10 @@ class ProductService(
         if (productRepository.existsByBarcode(request.barcode)) {
             throw createDuplicatedResourceException("barcode", request.barcode)
         }
-        // validate relations
-        try {
-            categoryInfoPort.getCategoryCodeById(request.categoryId)
-        } catch (e: DomainException) {
-            throw DomainException(INVALID_DATA, details = mapOf("field" to "categoryId"))
-        }
-
-        try {
-            brandInfoPort.getBrandCodeById(request.brandId)
-        } catch (e: DomainException) {
-            throw DomainException(INVALID_DATA, details = mapOf("field" to "brandId"))
-        }
-
-        try {
-            supplierInfoPort.getSupplierNameById(request.categoryId)
-        } catch (e: DomainException) {
-            throw DomainException(INVALID_DATA, details = mapOf("field" to "supplierId"))
-        }
+        relationValidator.validateRelations(
+            categoryId = request.categoryId,
+            brandId = request.brandId,
+            supplierId = request.supplierId
+        )
     }
 }
