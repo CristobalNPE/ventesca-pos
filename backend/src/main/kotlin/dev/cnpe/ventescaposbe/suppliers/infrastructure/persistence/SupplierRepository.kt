@@ -17,5 +17,5 @@ interface SupplierRepository : JpaRepository<Supplier, Long> {
     )
     fun existsDefaultSupplier(): Boolean
 
-    fun getSupplierByDefaultIsTrue(): Supplier?
+    fun getSupplierByIsDefaultIsTrue(): Supplier?
 }

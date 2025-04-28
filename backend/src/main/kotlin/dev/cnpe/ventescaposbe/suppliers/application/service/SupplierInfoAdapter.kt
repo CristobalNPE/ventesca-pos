@@ -20,7 +20,7 @@ class SupplierInfoAdapter(
 
     override fun getDefaultSupplierId(): Long {
         log.debug { "Attempting to find default supplier ID" }
-        val defaultSupplier = supplierRepository.getSupplierByDefaultIsTrue()
+        val defaultSupplier = supplierRepository.getSupplierByIsDefaultIsTrue()
             ?: run {
                 log.warn { "Default supplier not found in the database." }
                 throw DomainException(RESOURCE_NOT_FOUND, details = mapOf("defaultSupplier" to "true"))

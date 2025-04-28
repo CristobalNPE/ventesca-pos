@@ -48,10 +48,8 @@ class TenantManagementService(
         log.info { "Attempting to create tenant: ID=${tenantId.value}, DB=$dbName" }
 
         try {
-            // 1. Create the physical database (No Spring Transaction)
             createTenantDatabase(dbName)
 
-            // 2. Add DataSource pool to cache BEFORE running migrations
             // This allows Liquibase to get a connection via the TenantDataSource
             tenantDataSource.addTenant(tenantId.value)
 
@@ -170,7 +168,6 @@ class TenantManagementService(
     /**
      * Runs Liquibase schema update on an existing tenant's database.
      */
-    // Can run without Spring transaction as Liquibase manages its own
     @Transactional(propagation = Propagation.NEVER)
     fun updateTenantSchema(tenantId: String) {
         try {
@@ -188,7 +185,6 @@ class TenantManagementService(
      * Retrieves all distinct tenant IDs stored in the master database's businesses table.
      * Requires BusinessRepository to be migrated and injected.
      */
-    // Specify master transaction manager, read-only
     @Transactional(readOnly = true, transactionManager = "masterTransactionManager")
     fun getTenantIds(): Set<String> {
         log.debug { "Querying master database for all distinct tenant IDs..." }
