@@ -7,7 +7,7 @@ import jakarta.persistence.Table
 
 @Entity
 @Table(name = "supported_currencies")
-class Currency( // Removed open - handled by @Entity
+class Currency(
 
     @Column(name = "code", nullable = false, unique = true, length = 3)
     var code: String,
