@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController
 private val log = KotlinLogging.logger {}
 
 @RestController
-@RequestMapping("/api/enums")
+@RequestMapping("/dev/enums")
 @Tag(name = "Enumerations", description = "Provides definitions and localized text for application enums.")
 class EnumInfoController(
     private val enumTranslationService: EnumTranslationService
