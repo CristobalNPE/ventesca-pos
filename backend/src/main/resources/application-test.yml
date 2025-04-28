@@ -1,0 +1,39 @@
+spring:
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/tenant-changelog-master.xml
+    url: ${spring.datasource.url}
+    user: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://test-issuer.ventesca.dev/realms/test
+
+app:
+  tenant:
+    schema:
+      auto-update-on-startup: false
+  hibernate:
+    debug: true
+
+
+keycloak:
+  admin:
+    server-url: http://dummy-keycloak:8080
+    realm: test-realm
+    client-id: test-admin-cli
+    client-secret: test-secret
+    grant-type: client_credentials
+
+logging:
+  level:
+    liquibase: DEBUG
+    org.springframework.boot.autoconfigure.liquibase: DEBUG
+    dev.cnpe.ventescaposbe: DEBUG
+
