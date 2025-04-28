@@ -6,7 +6,8 @@ import jakarta.persistence.*
 
 @Entity
 @Table(name = "business_branches")
-class BusinessBranch(
+class
+BusinessBranch(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "business_id", nullable = false)

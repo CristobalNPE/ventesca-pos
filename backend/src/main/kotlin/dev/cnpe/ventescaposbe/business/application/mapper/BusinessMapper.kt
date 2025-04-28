@@ -34,9 +34,9 @@ class BusinessMapper {
      */
     fun mapBranchToInfoDto(branch: BusinessBranch): BusinessBranchInfo {
         return BusinessBranchInfo(
+            branchId = branch.id!!,
             branchName = branch.branchName,
-            address = branch.address
-                ?: TODO("Handle null address in branch mapping if possible"), // Handle null address
+            address = branch.address,
             contactNumber = branch.branchContactNumber,
             isMainBranch = branch.isMainBranch
             // Add manager info if needed in DTO

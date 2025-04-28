@@ -5,6 +5,14 @@ import io.swagger.v3.oas.annotations.media.Schema
 
 @Schema(description = "Information about a specific business branch.")
 data class BusinessBranchInfo(
+
+    @Schema(
+        description = "Unique identifier for the branch.",
+        example = "1",
+        requiredMode = Schema.RequiredMode.REQUIRED
+    )
+    val branchId: Long,
+
     @Schema(
         description = "Name of the branch.",
         example = "Downtown Office",

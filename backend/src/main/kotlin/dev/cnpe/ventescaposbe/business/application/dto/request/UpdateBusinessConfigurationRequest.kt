@@ -10,7 +10,7 @@ data class UpdateBusinessConfigurationRequest(
 
     @field:Pattern(regexp = "^[A-Z]{3}$", message = "Must be a 3-letter uppercase ISO 4217 code")
     @Schema(description = "New default currency code (ISO 4217).", example = "EUR")
-    val currencyCode: String?, // TODO: Add validation against Currency table? Deferred.
+    val currencyCode: String?, // TODO: Add validation against Currency table?
 
     @field:DecimalMin(value = "0.0", inclusive = true, message = "Tax percentage cannot be negative.")
     @field:DecimalMax(value = "100.0", inclusive = true, message = "Tax percentage cannot exceed 100.")
