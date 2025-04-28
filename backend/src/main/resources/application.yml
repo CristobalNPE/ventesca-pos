@@ -16,6 +16,9 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${ISSUER_URI}
+  threads:
+    virtual:
+      enabled: true
 
 app:
   tenant:
