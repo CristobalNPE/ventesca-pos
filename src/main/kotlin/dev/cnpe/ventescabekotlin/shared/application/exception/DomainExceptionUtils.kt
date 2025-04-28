@@ -51,7 +51,8 @@ fun createDuplicatedResourceException(field: String, value: Any): DomainExceptio
 fun createOperationNotAllowedException(
     reason: OperationNotAllowedReason,
     entityId: Any? = null,
-    additionalDetails: Map<String, Any>? = null
+    additionalDetails: Map<String, Any>? = null,
+    vararg parameters: String,
 ): DomainException {
     val detailsMap = mutableMapOf<String, Any>("reason" to reason.name)
     entityId?.let { detailsMap["entityId"] = it }
@@ -59,6 +60,7 @@ fun createOperationNotAllowedException(
 
     return DomainException(
         errorCode = OPERATION_NOT_ALLOWED,
-        details = detailsMap.toMap()
+        details = detailsMap.toMap(),
+        parameters = parameters
     )
 }

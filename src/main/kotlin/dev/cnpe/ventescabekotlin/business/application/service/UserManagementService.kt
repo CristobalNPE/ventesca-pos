@@ -7,6 +7,8 @@ import dev.cnpe.ventescabekotlin.business.domain.model.BusinessUser
 import dev.cnpe.ventescabekotlin.business.infrastructure.persistence.BusinessRepository
 import dev.cnpe.ventescabekotlin.business.infrastructure.persistence.BusinessUserRepository
 import dev.cnpe.ventescabekotlin.security.context.UserContext
+import dev.cnpe.ventescabekotlin.security.exception.IdpAccessException
+import dev.cnpe.ventescabekotlin.security.exception.IdpUserNotFoundException
 import dev.cnpe.ventescabekotlin.security.ports.IdentityProviderPort
 import dev.cnpe.ventescabekotlin.security.ports.dto.NewUserData
 import dev.cnpe.ventescabekotlin.security.ports.dto.UserIdentity
@@ -37,8 +39,6 @@ open class UserManagementService(
         // roles that can be assigned by a Business Admin
         private val ALLOWED_ROLES_TO_ASSIGN = setOf("SELLER", "BRANCH_MANAGER")
         private const val TENANT_ID_ATTRIBUTE = "tenant_id"
-        private const val ROLE_SELLER = "SELLER"
-        private const val ROLE_BRANCH_MANAGER = "BRANCH_MANAGER"
     }
 
     /**
@@ -125,18 +125,25 @@ open class UserManagementService(
 
         verifyUserTenantAffiliation(targetUserIdpId, adminTenantId)
 
-        idpPort.deleteUser(targetUserIdpId)
-        log.info { "Successfully deleted user [$targetUserIdpId] from IdP by admin [$adminUserId]" }
+        try {
+            idpPort.deleteUser(targetUserIdpId)
+            log.info { "Successfully deleted user [$targetUserIdpId] from IdP by admin [$adminUserId]" }
+        } catch (e: IdpUserNotFoundException) {
+            log.warn { "User [$targetUserIdpId] not found in IdP during deletion attempt, but proceeding to check local link." }
+        } catch (e: Exception) {
+            log.error(e) { "Error deleting user [$targetUserIdpId] from IdP." }
+            throw e
+        }
 
         masterTransactionTemplate.execute {
             val deletedCount = businessUserRepository.deleteByIdpUserId(targetUserIdpId)
             if (deletedCount > 0) {
                 log.info { "Successfully deleted BusinessUser link for IdP User [$targetUserIdpId] from master DB." }
             } else {
-                // inconsistency
-                log.warn { "Could not find BusinessUser link for IdP User [$targetUserIdpId] to delete, though user existed in IdP." }
+                log.warn { "Could not find BusinessUser link for IdP User [$targetUserIdpId] to delete." }
             }
-        }
+        } ?: throw IllegalStateException("Failed to execute master transaction for BusinessUser link deletion.")
+
         log.info { "Successfully completed deletion process for user [$targetUserIdpId] initiated by admin [$adminUserId]" }
     }
 
@@ -170,11 +177,67 @@ open class UserManagementService(
         }
     }
 
+
     // *******************************
     // 🔰 Private Helpers
     // *******************************
 
+    /**
+     * Verifies that the target user belongs to the expected tenant.
+     * Fetches user attributes from the IdP and compares the 'tenant_id' attribute.
+     *
+     * @param targetUserIdpId The IdP ID of the user being acted upon.
+     * @param expectedTenantId The tenant ID the user is expected to belong to (usually the admin's tenant).
+     * @throws DomainException(OPERATION_NOT_ALLOWED) if the user does not belong to the expected tenant or tenant info is missing.
+     * @throws IdpUserNotFoundException if the target user doesn't exist in the IdP.
+     * @throws IdpAccessException for communication errors.
+     */
     private fun verifyUserTenantAffiliation(targetUserIdpId: String, expectedTenantId: String) {
+        log.debug { "Verifying tenant affiliation for user [$targetUserIdpId]. Expected tenant: [$expectedTenantId]" }
+
+        try {
+            val attributes = idpPort.getUserAttributes(targetUserIdpId)
+            val userTenantIdList = attributes[TENANT_ID_ATTRIBUTE]
+
+            if (userTenantIdList.isNullOrEmpty()) {
+                log.error { "Target user [$targetUserIdpId] is missing the '$TENANT_ID_ATTRIBUTE' attribute. Cannot verify affiliation." }
+                throw createOperationNotAllowedException(
+                    TARGET_USER_TENANT_MISMATCH,
+                    entityId = targetUserIdpId,
+                    additionalDetails = mapOf("reason" to "Target user missing tenant attribute")
+                )
+            }
+            val userTenantId = userTenantIdList.first()
+
+            if (userTenantId != expectedTenantId) {
+                log.error { "Tenant mismatch for user [$targetUserIdpId]. Expected: [$expectedTenantId], Found: [$userTenantId]. Operation forbidden." }
+                throw createOperationNotAllowedException(
+                    TARGET_USER_TENANT_MISMATCH,
+                    entityId = targetUserIdpId,
+                    additionalDetails = mapOf(
+                        "reason" to "Target user belongs to a different tenant",
+                        "expectedTenant" to expectedTenantId,
+                        "actualTenant" to userTenantId
+                    )
+                )
+            }
+
+            log.info { "✅ User [$targetUserIdpId] affiliation verified for tenant [$expectedTenantId]." }
+        } catch (e: IdpUserNotFoundException) {
+            log.error { "User [$targetUserIdpId] not found in IdP during tenant affiliation check." }
+            throw e
+        } catch (e: IdpAccessException) {
+            log.error(e) { "IdP access error during tenant affiliation check for user [$targetUserIdpId]." }
+            throw e
+        } catch (e: Exception) {
+            log.error(e) { "Unexpected error during tenant affiliation check for user [$targetUserIdpId]." }
+            throw DomainException(
+                GeneralErrorCode.GENERAL,
+                message = "Failed to verify user tenant affiliation",
+                cause = e
+            )
+        }
+
 
     }
 

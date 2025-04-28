@@ -22,12 +22,9 @@ import java.net.URI
 @RestController
 @RequestMapping("/admin/businesses")
 @Tag(name = "Business Administration", description = "Endpoints for Superusers to manage businesses.")
-// TODO: Enable method security in a @Configuration class and add @PreAuthorize("hasRole('SUPERADMIN')")
-@SecurityRequirement(name = "bearerAuth")
 class AdminBusinessController(
     private val adminBusinessService: AdminBusinessService
 ) {
-
 
     @PostMapping
     @Operation(

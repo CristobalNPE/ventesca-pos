@@ -13,5 +13,8 @@ enum class BusinessOperationNotAllowedReason : OperationNotAllowedReason {
     CANNOT_ASSIGN_ROLES,
 
     @Schema(description = "Cannot add more users to the business, as the maximum number of users has been reached.")
-    USER_LIMIT_REACHED
+    USER_LIMIT_REACHED,
+
+    @Schema(description = "The target user belongs to a different tenant than the business.")
+    TARGET_USER_TENANT_MISMATCH
 }

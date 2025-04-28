@@ -1,6 +1,8 @@
 package dev.cnpe.ventescabekotlin.suppliers.application.service
 
 import dev.cnpe.ventescabekotlin.business.event.BusinessActivatedEvent
+import dev.cnpe.ventescabekotlin.catalog.api.ProductInfoPort
+import dev.cnpe.ventescabekotlin.shared.application.exception.DomainException
 import dev.cnpe.ventescabekotlin.shared.application.exception.createDuplicatedResourceException
 import dev.cnpe.ventescabekotlin.shared.application.exception.createOperationNotAllowedException
 import dev.cnpe.ventescabekotlin.shared.application.exception.createResourceNotFoundException
@@ -10,19 +12,19 @@ import dev.cnpe.ventescabekotlin.suppliers.application.dto.request.UpdateSupplie
 import dev.cnpe.ventescabekotlin.suppliers.application.dto.response.SupplierDetailedResponse
 import dev.cnpe.ventescabekotlin.suppliers.application.dto.response.SupplierSummaryResponse
 import dev.cnpe.ventescabekotlin.suppliers.application.events.SupplierDeleteAttemptedEvent
-import dev.cnpe.ventescabekotlin.suppliers.application.exception.SupplierOperationNotAllowedReason.CANNOT_DEACTIVATE_DEFAULT_SUPPLIER
-import dev.cnpe.ventescabekotlin.suppliers.application.exception.SupplierOperationNotAllowedReason.IS_DEFAULT_SUPPLIER
+import dev.cnpe.ventescabekotlin.suppliers.application.exception.SupplierOperationNotAllowedReason.*
 import dev.cnpe.ventescabekotlin.suppliers.application.mapper.SupplierMapper
 import dev.cnpe.ventescabekotlin.suppliers.domain.Supplier
 import dev.cnpe.ventescabekotlin.suppliers.domain.factory.SupplierFactory
 import dev.cnpe.ventescabekotlin.suppliers.infrastructure.persistence.SupplierRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.context.MessageSource
+import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.modulith.events.ApplicationModuleListener
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import dev.cnpe.ventescabekotlin.shared.application.exception.DomainException
 
 private val log = KotlinLogging.logger {}
 
@@ -32,7 +34,9 @@ class SupplierService(
     private val supplierRepository: SupplierRepository,
     private val supplierMapper: SupplierMapper,
     private val supplierFactory: SupplierFactory,
-    private val eventPublisher: ApplicationEventPublisher
+    private val eventPublisher: ApplicationEventPublisher,
+    private val productInfoPort: ProductInfoPort,
+    private val messageSource: MessageSource
 ) {
 
     /**
@@ -82,15 +86,28 @@ class SupplierService(
      * Deletes a supplier from the system.
      *
      * @param id The supplier's unique identifier
-     * @throws DomainException if the supplier is not found or if attempting to delete the default supplier
+     * @throws DomainException if the supplier is not found or if attempting to delete the default supplier or has associated products.
      */
     fun deleteSupplier(id: Long) {
         log.debug { "Attempting to delete supplier ID: $id" }
         val supplier = findSupplierByIdOrThrow(id)
 
         if (supplier.isDefault) {
+            log.warn { "Attempted to delete default supplier ID: $id. Operation forbidden." }
             throw createOperationNotAllowedException(reason = IS_DEFAULT_SUPPLIER, entityId = supplier.id!!)
         }
+
+        val productCount = productInfoPort.countProductsBySupplierId(id)
+        if (productCount > 0) {
+            log.warn { "Attempted to delete supplier ID: $id which has $productCount associated product(s). Operation forbidden." }
+            throw createOperationNotAllowedException(
+                reason = SUPPLIER_HAS_PRODUCTS,
+                entityId = supplier.id!!,
+                additionalDetails = mapOf("productCount" to productCount),
+                parameters = arrayOf(productCount.toString())
+            )
+        }
+
 
         log.warn { "Deleting supplier: ${supplier.name} (ID: ${supplier.id})" }
         eventPublisher.publishEvent(SupplierDeleteAttemptedEvent(supplier.id!!))
@@ -155,7 +172,16 @@ class SupplierService(
             return
         }
 
-        val defaultSupplierName = "${event.businessName} (Autoabastecimiento)" //TODO: i18n?
+        val locale = LocaleContextHolder.getLocale()
+
+        val suffix = messageSource.getMessage(
+            "default.supplier.suffix.self",
+            null,
+            "(Self-Supply)",
+            locale
+        )
+
+        val defaultSupplierName = "${event.businessName} $suffix"
         log.info { "Creating default self-supplier: $defaultSupplierName" }
 
         val defaultSupplier = supplierFactory.create(defaultSupplierName).apply {

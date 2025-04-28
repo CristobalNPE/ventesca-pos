@@ -3,7 +3,6 @@ package dev.cnpe.ventescabekotlin.inventory.application.service
 import dev.cnpe.ventescabekotlin.business.application.api.BusinessDataPort
 import dev.cnpe.ventescabekotlin.catalog.event.ProductCreatedEvent
 import dev.cnpe.ventescabekotlin.inventory.application.dto.request.UpdateStockRequest
-import dev.cnpe.ventescabekotlin.inventory.application.dto.response.InventoryItemDetailsResponse
 import dev.cnpe.ventescabekotlin.inventory.domain.entity.InventoryItem
 import dev.cnpe.ventescabekotlin.inventory.domain.entity.StockModification
 import dev.cnpe.ventescabekotlin.inventory.domain.enums.StockModificationType
@@ -16,7 +15,6 @@ import dev.cnpe.ventescabekotlin.shared.application.exception.GeneralErrorCode
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.MessageSource
-import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.modulith.events.ApplicationModuleListener
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -31,7 +29,6 @@ class InventoryManagementService(
     private val inventoryItemRepository: InventoryItemRepository,
     private val businessDataPort: BusinessDataPort,
     private val eventPublisher: ApplicationEventPublisher,
-    private val messageSource: MessageSource
 ) {
 
     /**
@@ -154,7 +151,6 @@ class InventoryManagementService(
     // *******************************
     // 🔰 Private Helpers
     // *******************************
-
 
 
     private fun updateStockUnitForAllItemsOfProduct(productId: Long, newUnit: StockUnitType) {

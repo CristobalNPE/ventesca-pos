@@ -1,4 +1,4 @@
-package dev.cnpe.ventescabekotlin.brands.infrastructure
+package dev.cnpe.ventescabekotlin.brands.infrastructure.persistence
 
 import dev.cnpe.ventescabekotlin.brands.domain.model.Brand
 import org.springframework.data.jpa.repository.JpaRepository

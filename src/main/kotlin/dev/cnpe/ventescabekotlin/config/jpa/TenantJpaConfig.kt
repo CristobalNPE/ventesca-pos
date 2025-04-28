@@ -1,6 +1,6 @@
 package dev.cnpe.ventescabekotlin.config.jpa
 
-import dev.cnpe.ventescabekotlin.brands.infrastructure.BrandRepository
+import dev.cnpe.ventescabekotlin.brands.infrastructure.persistence.BrandRepository
 import dev.cnpe.ventescabekotlin.business.infrastructure.persistence.BusinessRepository
 import dev.cnpe.ventescabekotlin.catalog.infrastructure.persistence.ProductPriceRepository
 import dev.cnpe.ventescabekotlin.catalog.infrastructure.persistence.ProductRepository

@@ -9,7 +9,7 @@ import dev.cnpe.ventescabekotlin.brands.application.exception.BrandOperationNotA
 import dev.cnpe.ventescabekotlin.brands.application.mapper.BrandMapper
 import dev.cnpe.ventescabekotlin.brands.domain.factory.BrandFactory
 import dev.cnpe.ventescabekotlin.brands.domain.model.Brand
-import dev.cnpe.ventescabekotlin.brands.infrastructure.BrandRepository
+import dev.cnpe.ventescabekotlin.brands.infrastructure.persistence.BrandRepository
 import dev.cnpe.ventescabekotlin.business.event.BusinessActivatedEvent
 import dev.cnpe.ventescabekotlin.shared.application.exception.DomainException
 import dev.cnpe.ventescabekotlin.shared.application.exception.createDuplicatedResourceException

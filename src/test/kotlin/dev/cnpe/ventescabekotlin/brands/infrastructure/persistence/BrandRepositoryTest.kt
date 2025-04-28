@@ -1,7 +1,7 @@
 package dev.cnpe.ventescabekotlin.brands.infrastructure.persistence
 
 import dev.cnpe.ventescabekotlin.brands.domain.model.Brand
-import dev.cnpe.ventescabekotlin.brands.infrastructure.BrandRepository
+import dev.cnpe.ventescabekotlin.brands.infrastructure.persistence.BrandRepository
 import dev.cnpe.ventescabekotlin.shared.domain.vo.GeneratedCode
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
