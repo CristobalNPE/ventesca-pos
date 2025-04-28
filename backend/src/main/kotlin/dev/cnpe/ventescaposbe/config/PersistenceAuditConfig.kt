@@ -2,6 +2,7 @@ package dev.cnpe.ventescaposbe.config
 
 import dev.cnpe.ventescaposbe.security.context.UserContext
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.beans.factory.ObjectProvider
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.auditing.DateTimeProvider
@@ -33,12 +34,21 @@ class PersistenceAuditConfig {
      */
     @Bean("auditorProvider")
     fun auditorProvider(
-        userContext: UserContext?
+        userContextProvider: ObjectProvider<UserContext>
     ): AuditorAware<String> {
         return AuditorAware<String> {
-            val auditor = userContext?.preferredUsername
+            val requestScopeAuditor = try {
+                userContextProvider.ifAvailable?.preferredUsername
+            } catch (e: Exception) {
+                log.trace(e) { "Could not get UserContext (likely no active request scope)."}
+                null
+            }
+
+
+            val auditor = requestScopeAuditor
                 ?: getAuditorFromSecurityContext()
                 ?: SYSTEM_AUDITOR
+
             log.trace { "Auditor resolved to: $auditor" }
             Optional.of(auditor)
         }
