@@ -1,1 +1,1 @@
-rootProject.name = "ventesca-be-kotlin"
+rootProject.name = "ventesca-pos-be"
