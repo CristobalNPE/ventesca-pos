@@ -1,6 +1,6 @@
 spring:
   application:
-    name: ventesca-be-kotlin
+    name: ventesca-pos-be
   profiles:
     active: ${SPRING_PROFILES_ACTIVE}
   liquibase:
