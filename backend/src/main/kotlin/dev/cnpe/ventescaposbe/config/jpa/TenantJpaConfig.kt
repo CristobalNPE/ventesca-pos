@@ -24,6 +24,7 @@ import javax.sql.DataSource
 private val log = KotlinLogging.logger {}
 
 @Configuration
+@Profile("!test")
 @EnableJpaRepositories(
     basePackages = [
         "org.springframework.modulith.events.jpa" // for modulith event publication repo

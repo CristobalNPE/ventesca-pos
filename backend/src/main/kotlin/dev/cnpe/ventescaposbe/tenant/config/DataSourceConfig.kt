@@ -13,7 +13,6 @@ import javax.sql.DataSource
 private val log = KotlinLogging.logger {}
 
 @Configuration
-
 class DataSourceConfig {
 
 

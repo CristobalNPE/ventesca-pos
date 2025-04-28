@@ -1,6 +1,7 @@
 package dev.cnpe.ventescaposbe.config
 
 import dev.cnpe.ventescaposbe.security.TenantAuthenticationFilter
+import dev.cnpe.ventescaposbe.security.config.JwtAuthConverter
 import dev.cnpe.ventescaposbe.security.filters.UserContextPopulationFilter
 import dev.cnpe.ventescaposbe.shared.infrastructure.web.filters.MDCLoggingFilter
 import org.springframework.context.annotation.Bean
@@ -20,7 +21,8 @@ import org.springframework.security.web.SecurityFilterChain
 class SecurityConfig(
     private val tenantAuthenticationFilter: TenantAuthenticationFilter,
     private val userContextPopulationFilter: UserContextPopulationFilter,
-    private val mdcLoggingFilter: MDCLoggingFilter
+    private val mdcLoggingFilter: MDCLoggingFilter,
+    private val jwtAuthConverter: JwtAuthConverter
 ) {
 
     @Bean
@@ -66,7 +68,11 @@ class SecurityConfig(
             }
             cors { disable() }
             csrf { disable() }
-            oauth2ResourceServer { jwt { } }
+            oauth2ResourceServer {
+                jwt {
+                    jwtAuthenticationConverter = jwtAuthConverter
+                }
+            }
             addFilterAfter<BearerTokenAuthenticationFilter>(tenantAuthenticationFilter)
             addFilterAfter<TenantAuthenticationFilter>(userContextPopulationFilter)
             addFilterAfter<UserContextPopulationFilter>(mdcLoggingFilter)
