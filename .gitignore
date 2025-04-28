@@ -1,0 +1,74 @@
+# ===================================================================
+# General / OS / Environment
+# ===================================================================
+.env
+.DS_Store
+Thumbs.db
+*~
+*.swp
+
+# ===================================================================
+# IDEs - Assuming you open the root 'ventesca-pos' folder
+# Adjust .idea/ if you open backend/ as a separate project.
+# ===================================================================
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+
+### VS Code ###
+.vscode/
+
+### STS / Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+# Ignore bin/ only if it's specifically an Eclipse output dir at the root
+# /bin/
+
+### NetBeans ###
+# Anchor these if NetBeans is only used for backend
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# ===================================================================
+# Backend Specific (Kotlin/Gradle) - Anchor paths with /backend/
+# ===================================================================
+/backend/build/
+/backend/.gradle/
+/backend/out/
+/backend/bin/ # If STS/Eclipse generates this inside backend
+
+# Ignore Gradle report files commonly generated at backend root
+/backend/dependency-updates-report.txt
+/backend/dependency-updates-report.html
+
+# Log files (adjust pattern if needed)
+/backend/*.log
+
+# Specific files if needed
+ /backend/HELP.md
+ /backend/digest.txt
+ ./digest.txt
+
+# ===================================================================
+# Frontend Specific (Add later when you create the frontend)
+# ===================================================================
+# Example:
+# /frontend/node_modules/
+# /frontend/dist/
+# /frontend/.env
+# /frontend/*.log
+
+
+
+
