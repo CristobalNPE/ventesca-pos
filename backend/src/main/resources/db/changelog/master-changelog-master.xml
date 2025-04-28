@@ -9,6 +9,7 @@
     <include file="common/001_create_event_publication.sql" relativeToChangelogFile="true"/>
 
     <includeAll path="master/business" relativeToChangelogFile="true"/>
+    <includeAll path="master/currency" relativeToChangelogFile="true"/>
 
 
 </databaseChangeLog>
