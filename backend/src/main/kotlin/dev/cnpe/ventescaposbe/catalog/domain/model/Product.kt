@@ -59,7 +59,7 @@ class Product(
         mappedBy = "product",
         cascade = [CascadeType.ALL],
         orphanRemoval = true,
-        fetch = FetchType.EAGER
+        fetch = FetchType.LAZY
     )
     @OrderBy("startDate DESC")
     val priceHistory: MutableSet<ProductPrice> = mutableSetOf(),
