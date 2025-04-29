@@ -1,8 +1,11 @@
 package dev.cnpe.ventescaposbe.catalog.application.service
 
 import dev.cnpe.ventescaposbe.catalog.api.ProductInfoPort
+import dev.cnpe.ventescaposbe.catalog.api.dto.ProductSaleInfo
 import dev.cnpe.ventescaposbe.catalog.infrastructure.persistence.ProductRepository
+import dev.cnpe.ventescaposbe.shared.application.exception.createResourceNotFoundException
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -33,6 +36,22 @@ class ProductInfoAdapter(
         val count = productRepository.countAllByCategoryId(categoryId)
         log.debug { "Found $count products for Category ID: $categoryId" }
         return count
+    }
+
+    override fun getProductSaleInfo(productId: Long): ProductSaleInfo {
+        log.debug { "Retrieving product sale info for ID: $productId" }
+        val product = productRepository.findByIdOrNull(productId)
+            ?: run {
+                log.debug { "No product found for ID: $productId" }
+                throw createResourceNotFoundException("Product", productId)
+            }
+        return ProductSaleInfo(
+            productId = product.id!!,
+            status = product.status,
+            currentSellingPrice = product.getCurrentPrice()?.sellingPrice,
+            productName = product.name,
+            productSku = product.sku
+        )
     }
 
 }
