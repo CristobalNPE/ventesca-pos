@@ -83,6 +83,11 @@ open class BusinessDataService(
             ?: emptySet()
     }
 
+    override fun getCurrentBusinessName(): String? {
+        val businessUser = getCurrentBusinessUserOrThrow()
+        return businessUser.business?.details?.businessName
+    }
+
     // *******************************
     // 🔰 Private Helpers
     // *******************************

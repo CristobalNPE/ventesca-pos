@@ -44,4 +44,12 @@ interface BusinessDataPort {
      */
     fun getBusinessBranchIds(): Set<Long>
 
+    /**
+     * Retrieves the name of the current business associated with the active security or tenant context.
+     * The tenant context must be properly set to get the business name.
+     *
+     * @return the name of the current business
+     */
+    fun getCurrentBusinessName(): String?
+
 }
