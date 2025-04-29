@@ -1,5 +1,6 @@
 package dev.cnpe.ventescaposbe.categories.application.service
 
+import dev.cnpe.ventescaposbe.catalog.api.ProductInfoPort
 import dev.cnpe.ventescaposbe.categories.application.dto.request.CreateCategoryRequest
 import dev.cnpe.ventescaposbe.categories.application.dto.request.UpdateCategoryRequest
 import dev.cnpe.ventescaposbe.categories.application.dto.response.CategoryCreatedResponse
@@ -32,7 +33,8 @@ class CategoryService(
     private val categoryMapper: CategoryMapper,
     private val categoryFactory: CategoryFactory,
     private val eventPublisher: ApplicationEventPublisher,
-    private val codeGeneratorService: CodeGeneratorService
+    private val codeGeneratorService: CodeGeneratorService,
+    private val productInfoPort: ProductInfoPort
 ) {
 
     // *******************************
@@ -49,8 +51,7 @@ class CategoryService(
     @Transactional(readOnly = true)
     fun getCategoryDetails(id: Long): CategoryDetailedResponse {
         val category = findCategoryByIdOrThrow(id)
-        val productCount = 666L // TODO: Replace with productInfoPort.countProductsByCategoryId(id)
-//        val productCount: Long = productInfoPort.countProductsByCategoryId(id)
+        val productCount: Long = productInfoPort.countProductsByCategoryId(id)
 
         return categoryMapper.toDetailed(category, productCount)
     }
@@ -146,7 +147,7 @@ class CategoryService(
     @Transactional(readOnly = true)
     fun getAllCategories(): List<CategoryWithChildrenResponse> {
         log.debug { "Fetching all categories" }
-        val productCount = 0L // TODO: Replace with productInfoPort calls
+        val productCount = 0L // FIXME: POTENTIAL N+1 IF WE MAKE THE CALL HERE FOR PRODUCT COUNT FOR EACH CATEGORY
         return categoryRepository.findAllParentCategories().map { categoryMapper.toWithChildren(it, productCount) }
     }
 
