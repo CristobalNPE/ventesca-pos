@@ -1,7 +1,6 @@
 plugins {
     kotlin("jvm") version "1.9.25"
     kotlin("plugin.spring") version "1.9.25"
-//    kotlin("kapt") version "1.9.25"
     id("org.springframework.boot") version "3.4.4"
     id("io.spring.dependency-management") version "1.1.7"
     kotlin("plugin.jpa") version "1.9.25"
@@ -16,11 +15,6 @@ java {
     }
 }
 
-//configurations {
-//    compileOnly {
-//        extendsFrom(configurations.annotationProcessor.get())
-//    }
-//}
 
 repositories {
     mavenCentral()
@@ -50,11 +44,6 @@ dependencies {
 
     implementation("org.jboss:jandex:3.3.0")
 
-////    // You might also need related dependencies depending on the client setup,
-////    // e.g., for REST client implementation used by keycloak-admin-client
-//    implementation("org.jboss.resteasy:resteasy-client:6.2.10.Final") // RESTEasy client needed by Keycloak client
-//    implementation("org.jboss.resteasy:resteasy-jackson2-provider:6.2.10.Final") // Jackson provider for RESTEasy
-
     developmentOnly("org.springframework.boot:spring-boot-docker-compose")
     runtimeOnly("org.postgresql:postgresql")
 
@@ -68,10 +57,6 @@ dependencies {
     testImplementation("org.testcontainers:postgresql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
-
-//kapt {
-//    includeCompileClasspath = false
-//}
 
 dependencyManagement {
     imports {
