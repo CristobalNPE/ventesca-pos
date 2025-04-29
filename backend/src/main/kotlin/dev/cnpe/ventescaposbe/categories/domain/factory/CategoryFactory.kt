@@ -1,7 +1,7 @@
 package dev.cnpe.ventescaposbe.categories.domain.factory
 
 import dev.cnpe.ventescaposbe.categories.domain.model.Category
-import dev.cnpe.ventescaposbe.categories.infrastructure.CategoryRepository
+import dev.cnpe.ventescaposbe.categories.infrastructure.persistence.CategoryRepository
 import dev.cnpe.ventescaposbe.shared.application.service.CodeGeneratorService
 import dev.cnpe.ventescaposbe.shared.domain.vo.GeneratedCode
 import org.springframework.stereotype.Component

@@ -10,7 +10,7 @@ import dev.cnpe.ventescaposbe.categories.application.exception.CategoryOperation
 import dev.cnpe.ventescaposbe.categories.application.mapper.CategoryMapper
 import dev.cnpe.ventescaposbe.categories.domain.factory.CategoryFactory
 import dev.cnpe.ventescaposbe.categories.domain.model.Category
-import dev.cnpe.ventescaposbe.categories.infrastructure.CategoryRepository
+import dev.cnpe.ventescaposbe.categories.infrastructure.persistence.CategoryRepository
 import dev.cnpe.ventescaposbe.shared.application.exception.DomainException
 import dev.cnpe.ventescaposbe.shared.application.exception.createDuplicatedResourceException
 import dev.cnpe.ventescaposbe.shared.application.exception.createOperationNotAllowedException

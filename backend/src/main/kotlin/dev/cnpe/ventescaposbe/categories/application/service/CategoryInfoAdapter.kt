@@ -1,7 +1,7 @@
 package dev.cnpe.ventescaposbe.categories.application.service
 
 import dev.cnpe.ventescaposbe.categories.application.api.CategoryInfoPort
-import dev.cnpe.ventescaposbe.categories.infrastructure.CategoryRepository
+import dev.cnpe.ventescaposbe.categories.infrastructure.persistence.CategoryRepository
 import dev.cnpe.ventescaposbe.shared.application.exception.DomainException
 import dev.cnpe.ventescaposbe.shared.application.exception.GeneralErrorCode.RESOURCE_NOT_FOUND
 import dev.cnpe.ventescaposbe.shared.application.exception.createResourceNotFoundException
@@ -36,4 +36,5 @@ class CategoryInfoAdapter(
         log.debug { "Found default category: ${defaultCategory.name} (ID: ${defaultCategory.id})" }
         return defaultCategory.id!!
     }
+
 }

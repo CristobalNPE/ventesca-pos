@@ -4,7 +4,7 @@ import dev.cnpe.ventescaposbe.brands.infrastructure.persistence.BrandRepository
 import dev.cnpe.ventescaposbe.business.infrastructure.persistence.BusinessRepository
 import dev.cnpe.ventescaposbe.catalog.infrastructure.persistence.ProductPriceRepository
 import dev.cnpe.ventescaposbe.catalog.infrastructure.persistence.ProductRepository
-import dev.cnpe.ventescaposbe.categories.infrastructure.CategoryRepository
+import dev.cnpe.ventescaposbe.categories.infrastructure.persistence.CategoryRepository
 import dev.cnpe.ventescaposbe.currency.infrastructure.persistence.CurrencyRepository
 import dev.cnpe.ventescaposbe.inventory.infrastructure.persistence.InventoryItemRepository
 import dev.cnpe.ventescaposbe.suppliers.infrastructure.persistence.SupplierRepository
