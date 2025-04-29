@@ -17,7 +17,6 @@ import org.springframework.web.filter.OncePerRequestFilter
 private val log = KotlinLogging.logger {}
 
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE + 10)
 class UserContextPopulationFilter(
     private val userContext: RequestUserContext
 ) : OncePerRequestFilter() {
@@ -36,6 +35,7 @@ class UserContextPopulationFilter(
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
+        log.debug { "********* Filtering request: ${request.servletPath}" }
 
         try {
             val authentication = SecurityContextHolder.getContext().authentication
@@ -48,7 +48,16 @@ class UserContextPopulationFilter(
                 userContext.email = token.getClaimAsString(CLAIM_EMAIL)
                 userContext.preferredUsername = token.getClaimAsString(CLAIM_PREFERRED_USERNAME)
                 userContext.roles = extractRoles(authentication.authorities)
+
                 userContext.tenantId = TenantContext.getCurrentTenant()
+                log.debug {
+                    "User Context populated with " +
+                            "userId: ${userContext.userId}, " +
+                            "email: ${userContext.email}, " +
+                            "tenantId: ${userContext.tenantId}, " +
+                            "preferredUsername: ${userContext.preferredUsername}, " +
+                            "roles: ${userContext.roles}"
+                }
             } else {
                 log.trace { "No authenticated JWT found, UserContext remains empty." }
             }
