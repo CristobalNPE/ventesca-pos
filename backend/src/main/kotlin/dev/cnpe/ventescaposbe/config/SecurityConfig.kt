@@ -61,6 +61,8 @@ class SecurityConfig(
                 authorize(HttpMethod.DELETE, "/suppliers/**", hasRole("BUSINESS_ADMIN"))
                 // authorize(HttpMethod.DELETE, "/products/**", hasRole("BUSINESS_ADMIN"))
 
+                authorize(HttpMethod.POST, "/orders/**", hasAnyRole("BUSINESS_ADMIN", "BRANCH_MANAGER", "SELLER"))
+
                 authorize(anyRequest, authenticated)
             }
             sessionManagement {
