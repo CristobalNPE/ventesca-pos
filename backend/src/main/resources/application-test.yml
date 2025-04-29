@@ -2,9 +2,9 @@ spring:
   liquibase:
     enabled: true
     change-log: classpath:db/changelog/tenant-changelog-master.xml
-    url: ${spring.datasource.url}
-    user: ${spring.datasource.username}
-    password: ${spring.datasource.password}
+#    url: ${spring.datasource.url}
+#    user: ${spring.datasource.username}
+#    password: ${spring.datasource.password}
   jpa:
     hibernate:
       ddl-auto: none
