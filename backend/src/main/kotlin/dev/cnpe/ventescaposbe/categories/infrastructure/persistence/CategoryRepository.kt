@@ -1,4 +1,4 @@
-package dev.cnpe.ventescaposbe.categories.infrastructure
+package dev.cnpe.ventescaposbe.categories.infrastructure.persistence
 
 import dev.cnpe.ventescaposbe.categories.domain.model.Category
 import dev.cnpe.ventescaposbe.shared.domain.vo.GeneratedCode
