@@ -7,6 +7,7 @@ import dev.cnpe.ventescaposbe.catalog.infrastructure.persistence.ProductReposito
 import dev.cnpe.ventescaposbe.categories.infrastructure.persistence.CategoryRepository
 import dev.cnpe.ventescaposbe.currency.infrastructure.persistence.CurrencyRepository
 import dev.cnpe.ventescaposbe.inventory.infrastructure.persistence.InventoryItemRepository
+import dev.cnpe.ventescaposbe.orders.infrastructure.persistence.OrderRepository
 import dev.cnpe.ventescaposbe.suppliers.infrastructure.persistence.SupplierRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.persistence.EntityManagerFactory
@@ -35,7 +36,8 @@ private val log = KotlinLogging.logger {}
         SupplierRepository::class,
         ProductRepository::class,
         ProductPriceRepository::class,
-        InventoryItemRepository::class
+        InventoryItemRepository::class,
+        OrderRepository::class
     ],
     excludeFilters = [
         ComponentScan.Filter(
@@ -87,6 +89,7 @@ class TenantJpaConfig : BaseJpaConfig() {
             "dev.cnpe.ventescaposbe.suppliers.domain",
             "dev.cnpe.ventescaposbe.catalog.domain.model",
             "dev.cnpe.ventescaposbe.inventory.domain",
+            "dev.cnpe.ventescaposbe.orders.domain",
             "dev.cnpe.ventescaposbe.shared.domain",
             "org.springframework.modulith.events.jpa"
             // Add ALL packages containing entities managed by the tenant EMF
