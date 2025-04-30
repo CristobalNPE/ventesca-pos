@@ -47,4 +47,15 @@ interface BusinessUserRepository : JpaRepository<BusinessUser, Long> {
 
     fun findAllByBusinessId(businessId: Long): List<BusinessUser>
 
+    @Query(
+        """
+            select bb.id
+            from BusinessUser bu
+            join bu.assignedBranches bb
+            where bu.idpUserId = :idpUserId
+        """
+    )
+    fun findAssignedBranchIdsByIdpUserId(idpUserId: String): Set<Long>
+
+
 }
