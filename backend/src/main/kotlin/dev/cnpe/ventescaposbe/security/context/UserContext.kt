@@ -11,5 +11,6 @@ interface UserContext {
     val preferredUsername: String?
     val roles: Set<String>
     val tenantId: String?
+    val allowedBranchIds: Set<Long>?
 
 }

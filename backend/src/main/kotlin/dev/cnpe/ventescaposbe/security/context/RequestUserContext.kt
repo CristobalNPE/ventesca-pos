@@ -10,6 +10,7 @@ class RequestUserContext(
     override var email: String? = null,
     override var preferredUsername: String? = null,
     override var roles: Set<String> = emptySet(),
-    override var tenantId: String? = null
+    override var tenantId: String? = null,
+    override var allowedBranchIds: Set<Long>? = null
 ) : UserContext {
 }
