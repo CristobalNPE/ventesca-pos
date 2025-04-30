@@ -28,6 +28,23 @@ BusinessBranch(
     @Column(name = "branch_manager_id")
     var branchManagerId: String?,
 
+
+    @ManyToMany(mappedBy = "assignedBranches", fetch = FetchType.LAZY)
+    val assignedUsers: MutableSet<BusinessUser> = mutableSetOf(),
+
+
     id: Long? = null,
     version: Int = 0
-) : BaseEntity(id, version)
+) : BaseEntity(id, version) {
+
+    fun addUser(bUser: BusinessUser) {
+        bUser.assignedBranches.add(this)
+        assignedUsers.add(bUser)
+    }
+
+    fun removeUser(bUser: BusinessUser) {
+        bUser.assignedBranches.remove(this)
+        assignedUsers.remove(bUser)
+    }
+
+}

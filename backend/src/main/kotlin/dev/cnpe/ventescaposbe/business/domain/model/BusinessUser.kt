@@ -30,6 +30,15 @@ class BusinessUser(
     @JoinColumn(name = "business_id")
     var business: Business?,
 
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "business_user_branch_assignments",
+        joinColumns = [JoinColumn(name = "business_user_id")],
+        inverseJoinColumns = [JoinColumn(name = "business_branch_id")]
+    )
+    val assignedBranches: MutableSet<BusinessBranch> = mutableSetOf(),
+
     id: Long? = null,
     version: Int = 0
 ) : BaseEntity(id, version) {
@@ -58,5 +67,15 @@ class BusinessUser(
                 business = null,
             )
         }
+    }
+
+    fun assignToBranch(branch: BusinessBranch) {
+        this.assignedBranches.add(branch)
+        branch.assignedUsers.add(this)
+    }
+
+    fun removeFromBranch(branch: BusinessBranch) {
+        this.assignedBranches.remove(branch)
+        branch.assignedUsers.remove(this)
     }
 }
