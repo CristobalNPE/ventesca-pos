@@ -3,21 +3,23 @@ package dev.cnpe.ventescaposbe.business.application.service
 import dev.cnpe.ventescaposbe.business.application.dto.response.BusinessUserInfo
 import dev.cnpe.ventescaposbe.business.application.exception.BusinessOperationNotAllowedReason.*
 import dev.cnpe.ventescaposbe.business.config.BusinessLimitProperties
+import dev.cnpe.ventescaposbe.business.domain.model.BusinessBranch
 import dev.cnpe.ventescaposbe.business.domain.model.BusinessUser
+import dev.cnpe.ventescaposbe.business.infrastructure.persistence.BusinessBranchRepository
 import dev.cnpe.ventescaposbe.business.infrastructure.persistence.BusinessRepository
 import dev.cnpe.ventescaposbe.business.infrastructure.persistence.BusinessUserRepository
+import dev.cnpe.ventescaposbe.categories.application.service.CategoryService
 import dev.cnpe.ventescaposbe.security.context.UserContext
 import dev.cnpe.ventescaposbe.security.exception.IdpAccessException
 import dev.cnpe.ventescaposbe.security.exception.IdpUserNotFoundException
 import dev.cnpe.ventescaposbe.security.ports.IdentityProviderPort
 import dev.cnpe.ventescaposbe.security.ports.dto.NewUserData
 import dev.cnpe.ventescaposbe.security.ports.dto.UserIdentity
-import dev.cnpe.ventescaposbe.shared.application.exception.DomainException
-import dev.cnpe.ventescaposbe.shared.application.exception.GeneralErrorCode
+import dev.cnpe.ventescaposbe.shared.application.exception.*
 import dev.cnpe.ventescaposbe.shared.application.exception.GeneralErrorCode.INSUFFICIENT_CONTEXT
-import dev.cnpe.ventescaposbe.shared.application.exception.createDuplicatedResourceException
-import dev.cnpe.ventescaposbe.shared.application.exception.createOperationNotAllowedException
+import dev.cnpe.ventescaposbe.shared.application.exception.GeneralErrorCode.INVALID_DATA
 import io.github.oshai.kotlinlogging.KotlinLogging
+import jakarta.persistence.EntityManager
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
@@ -33,7 +35,8 @@ open class UserManagementService(
     private val businessUserRepository: BusinessUserRepository,
     private val businessRepository: BusinessRepository,
     @Qualifier("masterTransactionTemplate") private val masterTransactionTemplate: TransactionTemplate,
-    private val businessLimitProperties: BusinessLimitProperties
+    private val businessLimitProperties: BusinessLimitProperties,
+    private val businessBranchRepository: BusinessBranchRepository,
 ) {
     companion object {
         // roles that can be assigned by a Business Admin
@@ -74,12 +77,80 @@ open class UserManagementService(
                 roles = rolesToAssign
             )
             businessUserLink.business = business
-            businessUserRepository.save(businessUserLink)
+            val savedUserLink = businessUserRepository.save(businessUserLink)
             log.info { "BusinessUser link saved for IdP User ${newUserIdp.id} to Tenant $adminTenantId" }
+
+            assignInitialBranches(
+                branchIdsToAssign = request.assignedBranchIds,
+                businessId = business.id!!,
+                targetUser = savedUserLink
+            )
+
         } ?: throw IllegalStateException("Failed to save business user link within transaction.")
 
         return newUserIdp
     }
+
+    /**
+     * Assigns a set of branches to a user, replacing any existing assignments.
+     */
+    @Transactional(transactionManager = "masterTransactionManager")
+    fun assignBranchesToUser(targetUserIdpId: String, branchIdsToAssign: Set<Long>) {
+        val adminUserId = userContext.userId
+            ?: throw DomainException(INSUFFICIENT_CONTEXT, message = "Admin User ID missing")
+        val adminTenantId = userContext.tenantId
+            ?: throw DomainException(INSUFFICIENT_CONTEXT, message = "Admin Tenant ID missing")
+
+        log.info { "Admin [$adminUserId] assigning branches $branchIdsToAssign to user [$targetUserIdpId]" }
+
+        verifyUserTenantAffiliation(targetUserIdpId, adminTenantId)
+
+        val businessUser = businessUserRepository.findByIdpUserId(targetUserIdpId)
+            ?: throw createResourceNotFoundException("BusinessUser", targetUserIdpId)
+        val businessId = businessUser.business?.id
+            ?: throw DomainException(
+                errorCode = INSUFFICIENT_CONTEXT,
+                message = "Business link missing for user"
+            )
+
+        val validBusinessBranches = businessBranchRepository.findAllIdsByBusinessId(businessId)
+        val invalidBranches = branchIdsToAssign - validBusinessBranches //TODO: REUSE THIS
+        if (invalidBranches.isNotEmpty()) {
+            throw DomainException(
+                errorCode = INVALID_DATA,
+                details = mapOf("invalidBranchIds" to invalidBranches),
+                message = "Cannot assign branches that do not belong to the business: $invalidBranches"
+            )
+        }
+
+        val branchesToAssignEntities = if (branchIdsToAssign.isEmpty()) {
+            emptySet()
+        } else {
+            businessBranchRepository.findAllById(branchIdsToAssign).toSet()
+        }
+
+        businessUser.assignedBranches.clear()
+        businessUser.assignedBranches.addAll(branchesToAssignEntities)
+
+        businessUserRepository.save(businessUser)
+
+        log.info { "Successfully updated branch assignments for user $targetUserIdpId to $branchIdsToAssign" }
+    }
+
+
+    /**
+     * Retrieves the IDs of branches assigned to a specific user.
+     */
+    @Transactional(readOnly = true, transactionManager = "masterTransactionManager")
+    fun getUserBranchAssignments(targetUserIdpId: String): Set<Long> {
+        val adminTenantId = userContext.tenantId ?: throw DomainException(INSUFFICIENT_CONTEXT)
+        verifyUserTenantAffiliation(targetUserIdpId, adminTenantId)
+
+        return businessUserRepository.findAssignedBranchIdsByIdpUserId(targetUserIdpId)
+    }
+
+
+
 
     /**
      * Assigns/updates roles for a specific user within the admin's tenant.
@@ -268,6 +339,9 @@ open class UserManagementService(
                 message = "Could not find business details for admin's tenant $adminTenantId during validation"
             )
 
+        // 5. TODO: Branch assignment checks if necessary
+
+
         val businessId = business.id!!
 
         val currentTotalUserCount = businessUserRepository.countByBusinessId(businessId)
@@ -284,8 +358,33 @@ open class UserManagementService(
         log.debug { "User creation request validated successfully." }
     }
 
-    // TODO: Implement method for update user (initiated by Business Admin)
-    // These method MUST include checks to ensure the admin is operating only on users
-    // belonging to their OWN tenant (by checking the tenant_id attribute via idpPort.getUserAttributes).
-    // see: delete/list
+    private fun assignInitialBranches(
+        branchIdsToAssign: Set<Long>?,
+        businessId: Long,
+        targetUser: BusinessUser
+    ) {
+        branchIdsToAssign?.takeIf { it.isNotEmpty() }?.let { branchIdsToAssign ->
+
+            val branches: List<BusinessBranch> = businessBranchRepository.findAllById(branchIdsToAssign)
+
+            if (branches.size != branchIdsToAssign.size || branches.any { it.business.id != businessId }) {
+                log.error {
+                    "Branch validation failed during user creation branch assignment. " +
+                            "Requested: $branchIdsToAssign, Found: ${branches.map { it.id }}"
+                }
+                throw DomainException(
+                    errorCode = INVALID_DATA,
+                    message = "One or more provided branch IDs are invalid for this business."
+                )
+            }
+            branches.forEach { targetUser.assignToBranch(it) }
+            businessUserRepository.save(targetUser) // should casacade, but just in categoryService
+            log.info { "Assigned initial branches ${branches.map { it.id }} to user ${targetUser.idpUserId}" }
+        }
+
+        // TODO: Implement method for update user (initiated by Business Admin)
+        // These method MUST include checks to ensure the admin is operating only on users
+        // belonging to their OWN tenant (by checking the tenant_id attribute via idpPort.getUserAttributes).
+        // see: delete/list
+    }
 }

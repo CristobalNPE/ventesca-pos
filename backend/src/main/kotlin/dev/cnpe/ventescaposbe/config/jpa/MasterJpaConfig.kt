@@ -1,6 +1,8 @@
 package dev.cnpe.ventescaposbe.config.jpa
 
+import dev.cnpe.ventescaposbe.business.infrastructure.persistence.BusinessBranchRepository
 import dev.cnpe.ventescaposbe.business.infrastructure.persistence.BusinessRepository
+import dev.cnpe.ventescaposbe.business.infrastructure.persistence.BusinessUserRepository
 import dev.cnpe.ventescaposbe.currency.infrastructure.persistence.CurrencyRepository
 import jakarta.persistence.EntityManagerFactory
 import org.springframework.beans.factory.annotation.Qualifier
@@ -20,7 +22,9 @@ import javax.sql.DataSource
 @EnableJpaRepositories(
     basePackageClasses = [
         BusinessRepository::class,
-        CurrencyRepository::class
+        CurrencyRepository::class,
+        BusinessBranchRepository::class,
+        BusinessUserRepository::class
     ],
     entityManagerFactoryRef = "masterEntityManagerFactory",
     transactionManagerRef = "masterTransactionManager"

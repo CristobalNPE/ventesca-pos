@@ -72,6 +72,56 @@ class UserManagementController(
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser)
     }
 
+    @GetMapping("/{userIdpId}/branches")
+    @Operation(summary = "Get assigned branches for a user")
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200", description = "Branch IDs retrieved successfully",
+                content = [Content(schema = Schema(type = "array", implementation = Long::class))]
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "User not found",
+                content = [Content(schema = Schema(implementation = ApiResult::class))]
+            ),
+            ApiResponse(responseCode = "403", description = "Forbidden")
+        ]
+    )
+    fun getUserBranchAssignments(
+        @Parameter(description = "The IdP ID of the user") @PathVariable userIdpId: String
+    ): ResponseEntity<Set<Long>> {
+        val branchIds = userManagementService.getUserBranchAssignments(userIdpId)
+        return ResponseEntity.ok(branchIds)
+    }
+
+    @PutMapping("/{userIdpId}/branches")
+    @Operation(summary = "Set/Replace assigned branches for a user")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "204", description = "Branch assignments updated successfully"),
+            ApiResponse(
+                responseCode = "404",
+                description = "User not found",
+                content = [Content(schema = Schema(implementation = ApiResult::class))]
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "Invalid Branch IDs provided",
+                content = [Content(schema = Schema(implementation = ApiResult::class))]
+            ),
+            ApiResponse(responseCode = "403", description = "Forbidden")
+        ]
+    )
+    fun assignBranchesToUser(
+        @Parameter(description = "The IdP ID of the user") @PathVariable userIdpId: String,
+        @Parameter(description = "Set of Branch IDs to assign (replaces existing)") @RequestBody branchIds: Set<Long>
+    ) {
+        userManagementService.assignBranchesToUser(userIdpId, branchIds)
+    }
+
+
     @GetMapping
     @Operation(
         summary = "List all users for the current business",
