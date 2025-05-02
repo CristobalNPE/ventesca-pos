@@ -12,6 +12,7 @@ import dev.cnpe.ventescaposbe.orders.application.dto.request.AddItemToOrderReque
 import dev.cnpe.ventescaposbe.orders.application.dto.request.AddPaymentRequest
 import dev.cnpe.ventescaposbe.orders.application.dto.request.UpdateOrderItemQuantityRequest
 import dev.cnpe.ventescaposbe.orders.application.dto.response.OrderResponse
+import dev.cnpe.ventescaposbe.orders.application.dto.response.OrderSummaryResponse
 import dev.cnpe.ventescaposbe.orders.application.mapper.OrderMapper
 import dev.cnpe.ventescaposbe.orders.domain.entity.Order
 import dev.cnpe.ventescaposbe.orders.domain.entity.OrderItem
@@ -22,13 +23,20 @@ import dev.cnpe.ventescaposbe.orders.event.ItemSoldInfo
 import dev.cnpe.ventescaposbe.orders.event.OrderCompletedEvent
 import dev.cnpe.ventescaposbe.orders.infrastructure.persistence.OrderRepository
 import dev.cnpe.ventescaposbe.security.context.UserContext
+import dev.cnpe.ventescaposbe.shared.application.dto.PageResponse
 import dev.cnpe.ventescaposbe.shared.application.exception.DomainException
 import dev.cnpe.ventescaposbe.shared.application.exception.GeneralErrorCode
 import dev.cnpe.ventescaposbe.shared.application.exception.GeneralErrorCode.INSUFFICIENT_CONTEXT
+import dev.cnpe.ventescaposbe.shared.application.exception.createInvalidStateException
 import dev.cnpe.ventescaposbe.shared.application.exception.createResourceNotFoundException
 import dev.cnpe.ventescaposbe.shared.application.service.CodeGeneratorService
 import io.github.oshai.kotlinlogging.KotlinLogging
+import jakarta.persistence.criteria.Predicate
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.domain.Specification
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -426,6 +434,126 @@ class OrderService(
             }
             //TODO: listener should handle retries ? or be idempotent?
         }
+        return orderMapper.toResponse(savedOrder)
+    }
+
+
+    /**
+     * Retrieves a paginated list of order summaries, applying optional filters.
+     *
+     * @param branchId Optional filter by branch ID.
+     * @param status Optional filter by order status.
+     * @param startDate Optional filter for orders created on or after this date.
+     * @param endDate Optional filter for orders created on or before this date.
+     * @param pageable Pagination and sorting information.
+     * @return A PageResponse containing OrderSummaryResponse objects.
+     */
+    @Transactional(readOnly = true)
+    fun listOrders(
+        branchId: Long?,
+        status: OrderStatus?,
+        startDate: OffsetDateTime?,
+        endDate: OffsetDateTime?,
+        pageable: Pageable
+    ): PageResponse<OrderSummaryResponse> {
+        log.debug {
+            "Listing orders with filters - branchId: $branchId, status: $status, " +
+                    "startDate: $startDate, endDate: $endDate, pageable: $pageable"
+        }
+
+        //build spec
+        val spec = Specification<Order> { root, query, cb ->
+            val predicates = mutableListOf<Predicate>()
+
+            branchId?.let {
+                predicates.add(cb.equal(root.get<Long>("branchId"), it))
+            }
+            status?.let {
+                predicates.add(cb.equal(root.get<OrderStatus>("status"), it))
+            }
+            startDate?.let {
+                predicates.add(cb.greaterThanOrEqualTo(root.get<OffsetDateTime>("orderTimestamp"), it))
+            }
+            endDate?.let {
+                // ad 1 day to endDate to make it inclusive of the whole day if only date is provided
+                val inclusiveEndDate = it.toLocalDate().plusDays(1).atStartOfDay().atOffset(it.offset)
+                predicates.add(cb.lessThan(root.get<OffsetDateTime>("orderTimestamp"), inclusiveEndDate))
+            }
+
+            // user can only see orders from branches they have access to
+            val allowedBranches = userContext.allowedBranchIds
+            val currentUserId = userContext.userId
+
+            if (allowedBranches == null) {
+                log.warn { "Allowed branches null in user context for user $currentUserId. Returning empty list." }
+                return@Specification cb.disjunction()
+            }
+
+            val specificBranchRequested: Long? = branchId
+            val requestedBranchIsAllowed =
+                specificBranchRequested != null && allowedBranches.contains(specificBranchRequested)
+
+            when {
+                // requested a specific branch but not allowed to see it
+                specificBranchRequested != null && !requestedBranchIsAllowed -> {
+                    log.warn { "User requested branch $specificBranchRequested which is not in their allowed set $allowedBranches. Returning empty list." }
+                    predicates.add(cb.disjunction())
+                }
+
+                // did not request a specific branch, or requested branch is allowed
+                specificBranchRequested == null -> {
+                    if (allowedBranches.isNotEmpty()) {
+                        predicates.add(root.get<Long>("branchId").`in`(allowedBranches))
+                    } else {
+                        log.warn { "User $currentUserId has no allowed branches assigned. Returning empty order list." }
+                        predicates.add(cb.disjunction())
+                    }
+                }
+            }
+
+            cb.and(*predicates.toTypedArray())
+        }
+
+        val orderPage: Page<Order> = orderRepository.findAll(spec, pageable)
+        val summaryPage = orderPage.map { orderMapper.toSummaryResponse(it) }
+
+        return PageResponse.from(summaryPage)
+    }
+
+
+    /**
+     * Cancels an order if it's in a cancellable state (PENDING or PROCESSING).
+     * Sets the order status to CANCELLED.
+     *
+     * @param orderId The ID of the order to cancel.
+     * @return The updated order details with the CANCELLED status.
+     * @throws DomainException(RESOURCE_NOT_FOUND) if the order doesn't exist.
+     * @throws DomainException(INVALID_STATE) if the order cannot be cancelled (e.g., already completed).
+     */
+    fun cancelOrder(orderId: Long): OrderResponse {
+        log.warn { "Attempting to cancel Order ID: $orderId" }
+
+        val order = orderRepository.findByIdOrNull(orderId)
+            ?: throw createResourceNotFoundException("Order", orderId)
+
+        val cancellableStatuses = setOf(OrderStatus.PENDING, OrderStatus.PROCESSING)
+
+        if (order.status !in cancellableStatuses) {
+            throw createInvalidStateException(
+                reason = "MISSING_ACTIVE_PRICE",
+                entityId = orderId,
+                additionalDetails = mapOf(
+                    "currentStatus" to order.status,
+                    "allowedStatuses" to cancellableStatuses.joinToString()
+                )
+            )
+        }
+
+        order.updateStatus(OrderStatus.CANCELLED)
+
+        val savedOrder = orderRepository.save(order)
+        log.info { "❌ Order ID: $orderId marked as CANCELLED." }
+
         return orderMapper.toResponse(savedOrder)
     }
 

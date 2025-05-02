@@ -2,9 +2,10 @@ package dev.cnpe.ventescaposbe.orders.infrastructure.persistence
 
 import dev.cnpe.ventescaposbe.orders.domain.entity.Order
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Query
 
-interface OrderRepository : JpaRepository<Order, Long> {
+interface OrderRepository : JpaRepository<Order, Long>, JpaSpecificationExecutor<Order> {
 
     fun findByOrderNumber(orderNumber: String): Order?
 

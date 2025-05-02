@@ -3,6 +3,7 @@ package dev.cnpe.ventescaposbe.orders.application.mapper
 import dev.cnpe.ventescaposbe.currency.service.MoneyFactory
 import dev.cnpe.ventescaposbe.orders.application.dto.response.OrderItemResponse
 import dev.cnpe.ventescaposbe.orders.application.dto.response.OrderResponse
+import dev.cnpe.ventescaposbe.orders.application.dto.response.OrderSummaryResponse
 import dev.cnpe.ventescaposbe.orders.application.dto.response.PaymentResponse
 import dev.cnpe.ventescaposbe.orders.domain.entity.Order
 import dev.cnpe.ventescaposbe.orders.domain.entity.OrderItem
@@ -92,6 +93,33 @@ class OrderMapper(
             status = payment.status,
             transactionReference = payment.transactionReference
         )
+    }
+
+    /**
+     * Converts an Order entity to OrderSummaryResponse DTO.
+     * Note: Assumes order.orderItems is loaded if needed for itemCount,
+     * otherwise, modify to accept itemCount as a parameter if fetched separately.
+     * @param order The order entity to convert.
+     * @return OrderSummaryResponse containing summary details.
+     */
+    fun toSummaryResponse(order: Order): OrderSummaryResponse {
+        val itemCount = try {
+            order.orderItems.size
+        } catch (e: org.hibernate.LazyInitializationException) {
+            0
+        }
+
+        return OrderSummaryResponse(
+            id = order.id!!,
+            orderNumber = order.orderNumber,
+            status = order.status,
+            branchId = order.branchId,
+            userIdpId = order.userIdpId,
+            orderTimestamp = order.orderTimestamp,
+            finalAmount = order.finalAmount,
+            itemCount = itemCount
+        )
+
     }
 
 }

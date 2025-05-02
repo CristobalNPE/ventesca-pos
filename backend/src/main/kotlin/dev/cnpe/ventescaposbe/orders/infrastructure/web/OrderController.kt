@@ -4,8 +4,11 @@ import dev.cnpe.ventescaposbe.orders.application.dto.request.AddItemToOrderReque
 import dev.cnpe.ventescaposbe.orders.application.dto.request.AddPaymentRequest
 import dev.cnpe.ventescaposbe.orders.application.dto.request.UpdateOrderItemQuantityRequest
 import dev.cnpe.ventescaposbe.orders.application.dto.response.OrderResponse
+import dev.cnpe.ventescaposbe.orders.application.dto.response.OrderSummaryResponse
 import dev.cnpe.ventescaposbe.orders.application.service.OrderService
+import dev.cnpe.ventescaposbe.orders.domain.enums.OrderStatus
 import dev.cnpe.ventescaposbe.shared.application.dto.ApiResult
+import dev.cnpe.ventescaposbe.shared.application.dto.PageResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
@@ -14,9 +17,15 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import org.springdoc.core.converters.models.PageableAsQueryParam
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
+import org.springframework.data.web.PageableDefault
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.net.URI
+import java.time.OffsetDateTime
 
 @RestController
 @RequestMapping("/orders")
@@ -214,4 +223,62 @@ class OrderController(
         return orderService.completeOrder(orderId)
     }
 
+    @GetMapping
+    @Operation(summary = "List orders with pagination and filtering")
+    @PageableAsQueryParam
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200", description = "Orders retrieved successfully",
+                content = [Content(schema = Schema(implementation = PageResponse::class))] // TODO: Check if this is correctly mapped in api-docs
+            )
+        ]
+    )
+    fun listOrders(
+        @Parameter(description = "Filter by branch ID") @RequestParam(required = false) branchId: Long?,
+        @Parameter(description = "Filter by order status") @RequestParam(required = false) status: OrderStatus?,
+        @Parameter(description = "Filter by start date (ISO 8601 format)")
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) startDate: OffsetDateTime?,
+        @Parameter(description = "Filter by end date (ISO 8601 format)")
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: OffsetDateTime?,
+
+        @Parameter(hidden = true)
+        @PageableDefault(size = 20, sort = ["orderTimestamp"], direction = Sort.Direction.DESC)
+        pageable: Pageable
+
+    ): PageResponse<OrderSummaryResponse> {
+
+        return orderService.listOrders(
+            branchId = branchId,
+            status = status,
+            startDate = startDate,
+            endDate = endDate,
+            pageable = pageable
+        )
+    }
+
+    @PostMapping("/{orderId}/cancel")
+    @Operation(summary = "Cancel a pending or processing order")
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200", description = "Order cancelled successfully, returns final order state",
+                content = [Content(schema = Schema(implementation = OrderResponse::class))]
+            ),
+            ApiResponse(
+                responseCode = "404", description = "Order not found",
+                content = [Content(schema = Schema(implementation = ApiResult::class))]
+            ),
+            ApiResponse(
+                responseCode = "409",
+                description = "Conflict / Invalid State (e.g., order already completed or cancelled)",
+                content = [Content(schema = Schema(implementation = ApiResult::class))]
+            )
+        ]
+    )
+    fun cancelOrder(
+        @Parameter(description = "ID of the order to cancel") @PathVariable orderId: Long
+    ): OrderResponse {
+        return orderService.cancelOrder(orderId)
+    }
 }
