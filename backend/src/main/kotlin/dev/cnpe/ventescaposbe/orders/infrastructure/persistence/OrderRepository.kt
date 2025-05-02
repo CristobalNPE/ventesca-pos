@@ -16,7 +16,7 @@ interface OrderRepository : JpaRepository<Order, Long> {
             where o.id = :orderId
         """
     )
-    fun findByIdWithItems(orderId:Long): Order?
+    fun findByIdWithItems(orderId: Long): Order?
 
     @Query(
         """
@@ -27,5 +27,9 @@ interface OrderRepository : JpaRepository<Order, Long> {
             where o.id = :orderId
         """
     )
-    fun findByIdWithItemsAndPayments(orderId:Long): Order?
+    fun findByIdWithItemsAndPayments(orderId: Long): Order?
+
+
+    @Query(value = "SELECT NEXTVAL('order_number_seq')", nativeQuery = true)
+    fun getNextOrderNumberSequenceValue(): Long
 }

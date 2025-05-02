@@ -188,7 +188,7 @@ class Order(
 
     /** Changes the order status, ensuring valid transitions. */
     fun updateStatus(newStatus: OrderStatus) {
-        // TODO: Implement state transition validation if needed
+        // TODO: Implement state transition validation
         // ** cannot go from COMPLETED back to PENDING,etc
         this.status = newStatus
     }
