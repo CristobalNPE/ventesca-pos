@@ -1,9 +1,6 @@
 -- liquibase formatted sql
 
--- changeset cnpe:1746241822380-1
-CREATE SEQUENCE IF NOT EXISTS primary_sequence START WITH 10000 INCREMENT BY 1;
-
--- changeset cnpe:1746241822380-2
+-- changeset cnpe:1746250445994-2
 CREATE TABLE order_items
 (
     id                       BIGINT           NOT NULL,
@@ -27,7 +24,7 @@ CREATE TABLE order_items
     CONSTRAINT pk_order_items PRIMARY KEY (id)
 );
 
--- changeset cnpe:1746241822380-3
+-- changeset cnpe:1746250445994-3
 CREATE TABLE orders
 (
     id                             BIGINT       NOT NULL,
@@ -59,11 +56,34 @@ CREATE TABLE orders
     CONSTRAINT pk_orders PRIMARY KEY (id)
 );
 
--- changeset cnpe:1746241822380-4
+-- changeset cnpe:1746250445994-4
+CREATE TABLE payments
+(
+    id                    BIGINT       NOT NULL,
+    version               INTEGER      NOT NULL,
+    created_at            TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    last_modified_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    created_by            VARCHAR(255) NOT NULL,
+    last_modified_by      VARCHAR(255),
+    order_id              BIGINT       NOT NULL,
+    payment_method        VARCHAR(255) NOT NULL,
+    payment_timestamp     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    status                VARCHAR(255) NOT NULL,
+    transaction_reference VARCHAR(255),
+    amount                DECIMAL      NOT NULL,
+    currency_code         VARCHAR(3)   NOT NULL,
+    CONSTRAINT pk_payments PRIMARY KEY (id)
+);
+
+-- changeset cnpe:1746250445994-5
 ALTER TABLE orders
     ADD CONSTRAINT uc_orders_order_number UNIQUE (order_number);
 
--- changeset cnpe:1746241822380-5
+-- changeset cnpe:1746250445994-6
 ALTER TABLE order_items
     ADD CONSTRAINT FK_ORDER_ITEMS_ON_ORDER FOREIGN KEY (order_id) REFERENCES orders (id);
+
+-- changeset cnpe:1746250445994-7
+ALTER TABLE payments
+    ADD CONSTRAINT FK_PAYMENTS_ON_ORDER FOREIGN KEY (order_id) REFERENCES orders (id);
 
