@@ -8,6 +8,7 @@ import dev.cnpe.ventescaposbe.business.application.dto.response.BusinessBranchIn
 import dev.cnpe.ventescaposbe.business.application.dto.response.BusinessDetailedResponse
 import dev.cnpe.ventescaposbe.business.application.dto.response.BusinessStatusResponse
 import dev.cnpe.ventescaposbe.business.application.service.BusinessManagementService
+import dev.cnpe.ventescaposbe.security.annotation.RequireAdmin
 import dev.cnpe.ventescaposbe.shared.application.dto.ApiResult
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -28,6 +29,7 @@ import java.net.URI
     name = "Business Management",
     description = "Endpoints for a Business Admin to manage their own business details, configuration, and branches."
 )
+@RequireAdmin
 class BusinessManagementController(
     private val businessManagementService: BusinessManagementService
 ) {
