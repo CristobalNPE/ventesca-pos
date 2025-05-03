@@ -96,6 +96,11 @@ class SecurityConfig(
                 // *******************************
                 // 🔰 Inventory Management
                 // *******************************
+                authorize(
+                    HttpMethod.POST,
+                    "/inventory/{productId}/adjustments",
+                    hasAnyRole(ROLE_BUSINESS_ADMIN, ROLE_BRANCH_MANAGER)
+                )
                 authorize(HttpMethod.GET, "/inventory/**", authenticated)
                 authorize(HttpMethod.PUT, "/inventory/**", hasAnyRole(ROLE_BUSINESS_ADMIN, ROLE_BRANCH_MANAGER))
 

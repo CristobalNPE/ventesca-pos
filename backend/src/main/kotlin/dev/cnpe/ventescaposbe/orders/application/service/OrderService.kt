@@ -10,6 +10,7 @@ import dev.cnpe.ventescaposbe.inventory.application.api.InventoryInfoPort
 import dev.cnpe.ventescaposbe.inventory.application.api.dto.BranchInventoryDetails
 import dev.cnpe.ventescaposbe.orders.application.dto.request.AddItemToOrderRequest
 import dev.cnpe.ventescaposbe.orders.application.dto.request.AddPaymentRequest
+import dev.cnpe.ventescaposbe.orders.application.dto.request.ApplyDiscountRequest
 import dev.cnpe.ventescaposbe.orders.application.dto.request.UpdateOrderItemQuantityRequest
 import dev.cnpe.ventescaposbe.orders.application.dto.response.OrderResponse
 import dev.cnpe.ventescaposbe.orders.application.dto.response.OrderSummaryResponse
@@ -22,6 +23,7 @@ import dev.cnpe.ventescaposbe.orders.domain.enums.PaymentStatus
 import dev.cnpe.ventescaposbe.orders.event.ItemSoldInfo
 import dev.cnpe.ventescaposbe.orders.event.OrderCompletedEvent
 import dev.cnpe.ventescaposbe.orders.infrastructure.persistence.OrderRepository
+import dev.cnpe.ventescaposbe.promotions.application.api.PromotionInfoPort
 import dev.cnpe.ventescaposbe.security.context.UserContext
 import dev.cnpe.ventescaposbe.shared.application.dto.PageResponse
 import dev.cnpe.ventescaposbe.shared.application.exception.DomainException
@@ -29,7 +31,6 @@ import dev.cnpe.ventescaposbe.shared.application.exception.GeneralErrorCode
 import dev.cnpe.ventescaposbe.shared.application.exception.GeneralErrorCode.INSUFFICIENT_CONTEXT
 import dev.cnpe.ventescaposbe.shared.application.exception.createInvalidStateException
 import dev.cnpe.ventescaposbe.shared.application.exception.createResourceNotFoundException
-import dev.cnpe.ventescaposbe.shared.application.service.CodeGeneratorService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.persistence.criteria.Predicate
 import org.springframework.context.ApplicationEventPublisher
@@ -56,8 +57,8 @@ class OrderService(
     private val businessDataPort: BusinessDataPort,
     private val inventoryInfoPort: InventoryInfoPort,
     private val moneyFactory: MoneyFactory,
-    private val codeGeneratorService: CodeGeneratorService,
     private val productUtils: ProductUtils,
+    private val promotionInfoPort: PromotionInfoPort,
     private val eventPublisher: ApplicationEventPublisher
 ) {
 
@@ -136,9 +137,8 @@ class OrderService(
             "Cannot add items to order ${order.id} because its status is ${order.status}"
         }
 
-        val (productId, productName, productSku, status, currentSellingPrice) = productInfoPort.getProductSaleInfo(
-            request.productId
-        )
+        val (productId, productName, productSku, categoryId, brandId, supplierId, status, currentSellingPrice) =
+            productInfoPort.getProductSaleInfo(request.productId)
 
         require(status === ProductStatus.ACTIVE) {
             "Product $productId is not ACTIVE and cannot be added to the order."
@@ -556,6 +556,7 @@ class OrderService(
 
         return orderMapper.toResponse(savedOrder)
     }
+
 
 
     // *******************************

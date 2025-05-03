@@ -16,6 +16,15 @@ data class ProductSaleInfo(
     @Schema(description = "Stock keeping unit (SKU) of the product")
     val productSku: String?,
 
+    @Schema(description = "ID of the category this product belongs to")
+    val categoryId: Long?,
+
+    @Schema(description = "ID of the brand this product belongs to")
+    val brandId: Long?,
+
+    @Schema(description = "ID of the supplier this product is sourced from")
+    val supplierId: Long?,
+
     @Schema(description = "Current status of the product")
     val status: ProductStatus,
 

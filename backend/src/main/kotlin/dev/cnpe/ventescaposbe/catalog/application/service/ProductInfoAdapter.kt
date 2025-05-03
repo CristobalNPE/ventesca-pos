@@ -48,6 +48,9 @@ class ProductInfoAdapter(
         return ProductSaleInfo(
             productId = product.id!!,
             status = product.status,
+            categoryId = product.categoryId,
+            brandId = product.brandId,
+            supplierId = product.supplierId,
             currentSellingPrice = product.getCurrentPrice()?.sellingPrice,
             productName = product.name,
             productSku = product.sku

@@ -2,6 +2,7 @@ package dev.cnpe.ventescaposbe.orders.domain.entity
 
 import dev.cnpe.ventescaposbe.currency.vo.Money
 import dev.cnpe.ventescaposbe.shared.domain.model.BaseEntity
+import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.persistence.*
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -56,6 +57,9 @@ class OrderItem(
     )
     var discountAmount: Money,
 
+    @Column(name = "applied_discount_rule_id")
+    var appliedDiscountRuleId: Long? = null,
+
     id: Long? = null,
     version: Int = 0
 ) : BaseEntity(id, version) {
@@ -99,4 +103,30 @@ class OrderItem(
 
         return netTotal.copy(amount = finalNetAmount.setScale(netTotal.amount.scale(), RoundingMode.HALF_UP))
     }
+
+    /**
+     * Applies a discount to the order item based on the calculated discount amount and associates it with a specific rule.
+     */
+    fun applyDiscount(calculatedAmount: Money, ruleId: Long?) {
+        this.unitPrice.assertSameCurrency(calculatedAmount)
+        require(calculatedAmount.isNonNegative()) { "Calculated discount amount cannot be negative" }
+
+        val maxDiscount = this.calculateTotalPrice()
+        this.discountAmount = if (calculatedAmount > maxDiscount) maxDiscount else calculatedAmount
+        this.appliedDiscountRuleId = ruleId
+
+        if (calculatedAmount > maxDiscount) {
+            log.debug { "Item ${this.id} discount capped at ${this.discountAmount} (Original requested: $calculatedAmount)" }
+        }
+    }
+
+    /**
+     * Removes any applied discount from the current order item.
+     */
+    fun removeDiscount() {
+        this.discountAmount = this.discountAmount.copy(amount = BigDecimal.ZERO)
+        this.appliedDiscountRuleId = null
+    }
 }
+
+private val log = KotlinLogging.logger {}

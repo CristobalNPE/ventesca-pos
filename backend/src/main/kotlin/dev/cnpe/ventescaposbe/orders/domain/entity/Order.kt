@@ -4,6 +4,7 @@ import dev.cnpe.ventescaposbe.currency.vo.Money
 import dev.cnpe.ventescaposbe.orders.domain.enums.OrderStatus
 import dev.cnpe.ventescaposbe.orders.domain.enums.PaymentStatus
 import dev.cnpe.ventescaposbe.shared.domain.model.BaseEntity
+import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.persistence.*
 import java.math.BigDecimal
 import java.time.OffsetDateTime
@@ -64,6 +65,19 @@ class Order(
         )
     )
     var discountAmount: Money,
+
+    @Column(name = "applied_order_discount_rule_id")
+    var appliedOrderDiscountRuleId: Long? = null,
+
+    @Embedded
+    @AttributeOverrides(
+        AttributeOverride(name = "amount", column = Column(name = "order_level_discount_amount", nullable = false)),
+        AttributeOverride(
+            name = "currencyCode",
+            column = Column(name = "order_level_discount_currency", nullable = false, length = 3)
+        )
+    )
+    var orderLevelDiscountAmount: Money = subTotal.copy(amount = BigDecimal.ZERO),
 
     @Embedded
     @AttributeOverrides(
@@ -134,7 +148,7 @@ class Order(
     /** Recalculates subTotal, taxAmount, totalAmount, and finalAmount based on current orderItems. */
     fun recalculateTotals() {
         if (orderItems.isEmpty()) {
-            val zero = subTotal.copy(amount = BigDecimal.ZERO)
+            val zero = zero()
             this.subTotal = zero
             this.taxAmount = zero
             this.totalAmount = zero
@@ -143,8 +157,7 @@ class Order(
             return
         }
 
-        val currencyCode = orderItems.first().unitPrice.currencyCode
-        val zero = Money(BigDecimal.ZERO, currencyCode)
+        val zero = zero()
 
         var calculatedSubTotal = zero
         var calculatedTotalAmount = zero
@@ -157,6 +170,13 @@ class Order(
             calculatedDiscount += item.discountAmount
         }
 
+        val maxOrderDiscount = calculatedTotalAmount
+
+        if (this.orderLevelDiscountAmount > maxOrderDiscount) {
+            log.warn { "Order-level discount ${this.orderLevelDiscountAmount} exceeds item total $maxOrderDiscount for order ${this.id}. Capping." }
+            this.orderLevelDiscountAmount = maxOrderDiscount
+        }
+
         this.subTotal = calculatedSubTotal
         this.totalAmount = calculatedTotalAmount
         this.taxAmount = calculatedTotalAmount - calculatedSubTotal
@@ -167,17 +187,17 @@ class Order(
         require(this.taxAmount.isNonNegative()) { "Calculated taxAmount cannot be negative" }
         require(this.totalAmount.isNonNegative()) { "Calculated totalAmount cannot be negative" }
         require(this.discountAmount.isNonNegative()) { "Calculated discountAmount cannot be negative" }
+        require(this.orderLevelDiscountAmount.isNonNegative()) { "Calculated orderLevelDiscountAmount cannot be negative: ${this.orderLevelDiscountAmount}" }
         require(this.finalAmount.isNonNegative()) { "Calculated finalAmount cannot be negative" }
     }
 
     /** Calculates the total amount paid so far. */
     fun calculateTotalPaid(): Money {
         if (payments.isEmpty()) {
-            val currency = totalAmount.currencyCode
-            return Money(BigDecimal.ZERO, currency)
+            return zero()
         }
         val currencyCode = payments.first().amount.currencyCode
-        val zero = Money(BigDecimal.ZERO, currencyCode)
+        val zero = zero()
         return payments.filter { it.status == PaymentStatus.COMPLETED }
             .fold(zero) { sum, payment -> sum + payment.amount }
     }
@@ -193,5 +213,42 @@ class Order(
         this.status = newStatus
     }
 
+    fun applyOrderDiscount(calculatedAmount: Money, ruleId: Long?) {
+        this.totalAmount.assertSameCurrency(calculatedAmount)
+        require(calculatedAmount.isNonNegative()) { "Calculated order discount amount cannot be negative." }
+
+        val currentTotalPreOrderDiscount = calculateTotalPreOrderDiscount()
+        this.orderLevelDiscountAmount =
+            if (calculatedAmount > currentTotalPreOrderDiscount) currentTotalPreOrderDiscount else calculatedAmount
+        this.appliedOrderDiscountRuleId = ruleId
+
+        if (calculatedAmount > currentTotalPreOrderDiscount) {
+            log.debug { "Order ${this.id} discount capped at ${this.orderLevelDiscountAmount} (Original requested: $calculatedAmount)" }
+        }
+
+        recalculateTotals()
+    }
+
+    /** Removes any applied order-level discount. */
+    fun removeOrderDiscount() {
+        this.orderLevelDiscountAmount = this.orderLevelDiscountAmount.copy(amount = BigDecimal.ZERO)
+        this.appliedOrderDiscountRuleId = null
+        recalculateTotals()
+    }
+
+    /** Get total after item discounts, before order discount */
+    fun calculateTotalPreOrderDiscount(): Money {
+        if (orderItems.isEmpty()) return zero()
+        val zero = zero()
+        return orderItems.fold(zero) { sum, item -> sum + item.calculateFinalPrice() }
+    }
+
+    /** Helper to get a zero Money object in the order's currency */
+    private fun zero(): Money {
+        return this.finalAmount.copy(amount = BigDecimal.ZERO)
+    }
+
 
 }
+
+private val log = KotlinLogging.logger {}

@@ -2,6 +2,7 @@ package dev.cnpe.ventescaposbe.inventory.infrastructure.web
 
 import dev.cnpe.ventescaposbe.inventory.application.api.InventoryInfoPort
 import dev.cnpe.ventescaposbe.inventory.application.api.dto.BranchInventoryDetails
+import dev.cnpe.ventescaposbe.inventory.application.dto.request.AdjustStockRequest
 import dev.cnpe.ventescaposbe.inventory.application.dto.request.UpdateStockRequest
 import dev.cnpe.ventescaposbe.inventory.application.service.InventoryManagementService
 import dev.cnpe.ventescaposbe.shared.application.dto.ApiResult
@@ -78,6 +79,45 @@ class InventoryController(
         @Valid @RequestBody request: UpdateStockRequest
     ) {
         inventoryManagementService.updateStock(productId, request)
+    }
+
+    @PostMapping("/{productId}/adjustments")
+    @Operation(
+        summary = "Manually adjust stock for a product in a specific branch",
+        description = """
+        Increases or decreases the stock quantity for a product in the specified branch
+        for reasons like DAMAGE, LOSS, CORRECTION, RESTOCK, etc.
+        Provide a positive adjustmentAmount to increase stock, negative to decrease.
+        The reason must be provided and cannot be SALE or RETURN.
+        The branch ID is specified within the request body.
+        """
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "204", description = "Stock adjusted successfully."),
+            ApiResponse(
+                responseCode = "400",
+                description = "Invalid input data (e.g., zero amount, forbidden reason, missing fields).",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = ApiResult::class))]
+            ),
+            ApiResponse(
+                responseCode = "404", description = "Inventory item not found for the given product and branch.",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = ApiResult::class))]
+            ),
+            ApiResponse(
+                responseCode = "401", description = "Unauthorized."
+            ),
+            ApiResponse(
+                responseCode = "403", description = "Forbidden (Insufficient permissions)."
+            )
+        ]
+    )
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun adjustStock(
+        @Parameter(description = "ID of the product whose stock is being adjusted") @PathVariable productId: Long,
+        @Valid @RequestBody request: AdjustStockRequest
+    ) {
+        inventoryManagementService.adjustStock(productId, request)
     }
 
 }

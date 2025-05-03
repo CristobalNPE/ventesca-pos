@@ -2,11 +2,13 @@ package dev.cnpe.ventescaposbe.inventory.application.service
 
 import dev.cnpe.ventescaposbe.business.application.api.BusinessDataPort
 import dev.cnpe.ventescaposbe.catalog.event.ProductCreatedEvent
+import dev.cnpe.ventescaposbe.inventory.application.dto.request.AdjustStockRequest
 import dev.cnpe.ventescaposbe.inventory.application.dto.request.UpdateStockRequest
 import dev.cnpe.ventescaposbe.inventory.domain.entity.InventoryItem
 import dev.cnpe.ventescaposbe.inventory.domain.entity.StockModification
 import dev.cnpe.ventescaposbe.inventory.domain.enums.StockModificationReason
-import dev.cnpe.ventescaposbe.inventory.domain.enums.StockModificationType
+import dev.cnpe.ventescaposbe.inventory.domain.enums.StockModificationType.DECREASE
+import dev.cnpe.ventescaposbe.inventory.domain.enums.StockModificationType.INCREASE
 import dev.cnpe.ventescaposbe.inventory.domain.enums.StockUnitType
 import dev.cnpe.ventescaposbe.inventory.domain.vo.Stock
 import dev.cnpe.ventescaposbe.inventory.event.StockUpdatedEvent
@@ -71,7 +73,7 @@ class InventoryManagementService(
             if (difference != 0.0) {
                 val modification = StockModification(
                     amount = abs(difference),
-                    type = if (difference > 0) StockModificationType.INCREASE else StockModificationType.DECREASE,
+                    type = if (difference > 0) INCREASE else DECREASE,
                     reason = reason,
                     item = item,
                 )
@@ -108,6 +110,61 @@ class InventoryManagementService(
         log.info { "Saved updated InventoryItem for Product ID $productId / Branch ${request.branchId}. New Stock: ${item.stock}" }
 
         val totalStockQuantity = inventoryItemRepository.calculateTotalStockForProduct(productId)
+        eventPublisher.publishEvent(StockUpdatedEvent(productId, totalStockQuantity))
+        log.info { "Published StockUpdatedEvent for Product ID $productId. New Total Stock: $totalStockQuantity" }
+    }
+
+
+    /**
+     * Manually adjusts the stock quantity for a specific product in a specific branch
+     * for reasons like damage, loss, correction, or manual restock.
+     *
+     * @param productId The ID of the product whose stock is being adjusted.
+     * @param request The details of the stock adjustment, including branch, amount, and reason.
+     * @throws DomainException if the inventory item is not found, or if the reason is invalid for manual adjustment.
+     */
+    fun adjustStock(productId: Long, request: AdjustStockRequest) {
+        log.info {
+            "Adjusting stock for Product ID: $productId in Branch ID: ${request.branchId}. " +
+                    "Amount: ${request.adjustmentAmount}, Reason: ${request.reason}, Notes: ${request.notes ?: "N/A"}"
+        }
+
+        val item = findInventoryItemOrThrow(productId, request.branchId)
+        val originalStockVO = item.stock
+
+        val modificationType = if (request.adjustmentAmount > 0) INCREASE else DECREASE
+
+        val absoluteAdjustmentAmount = abs(request.adjustmentAmount)
+
+        val preliminaryNewQuantity = originalStockVO.quantity + request.adjustmentAmount
+        val newQuantity = preliminaryNewQuantity.coerceAtLeast(0.0)
+
+        if (newQuantity != preliminaryNewQuantity) {
+            log.warn {
+                "Stock adjustment for Product ID $productId / Branch ${request.branchId} resulted in negative quantity ($preliminaryNewQuantity). " +
+                        "Capping stock at 0. Original: ${originalStockVO.quantity}, Adjustment: ${request.adjustmentAmount}"
+            }
+        }
+
+        val modification = StockModification(
+            amount = absoluteAdjustmentAmount,
+            type = modificationType,
+            reason = request.reason,
+            item = item,
+        )
+        //TODO: SHould we add a 'notes' field to StockModification entity:?
+
+        item.addStockModification(modification)
+        log.debug { "Created StockModification record for adjustment." }
+
+        item.stock = originalStockVO.copy(quantity = newQuantity)
+        log.debug { "Updated InventoryItem stock VO. New quantity: $newQuantity" }
+
+        inventoryItemRepository.save(item)
+        log.info { "Saved InventoryItem (ID: ${item.id}) after stock adjustment." }
+
+        val totalStockQuantity = inventoryItemRepository.calculateTotalStockForProduct(productId)
+
         eventPublisher.publishEvent(StockUpdatedEvent(productId, totalStockQuantity))
         log.info { "Published StockUpdatedEvent for Product ID $productId. New Total Stock: $totalStockQuantity" }
     }
@@ -188,7 +245,7 @@ class InventoryManagementService(
 
                 val modification = StockModification(
                     amount = quantitySold,
-                    type = StockModificationType.DECREASE,
+                    type = DECREASE,
                     reason = StockModificationReason.SALE,
                     item = inventoryItem,
                 )
