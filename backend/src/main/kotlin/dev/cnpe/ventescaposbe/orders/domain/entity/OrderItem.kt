@@ -60,6 +60,10 @@ class OrderItem(
     @Column(name = "applied_discount_rule_id")
     var appliedDiscountRuleId: Long? = null,
 
+    @Column(name = "returned_quantity", nullable = false)
+    var returnedQuantity: Double = 0.0,
+
+
     id: Long? = null,
     version: Int = 0
 ) : BaseEntity(id, version) {
@@ -126,6 +130,11 @@ class OrderItem(
     fun removeDiscount() {
         this.discountAmount = this.discountAmount.copy(amount = BigDecimal.ZERO)
         this.appliedDiscountRuleId = null
+    }
+
+    /** Calculates the quantity of this item still eligible for return. */
+    fun getReturnableQuantity(): Double {
+        return (quantity - returnedQuantity).coerceAtLeast(0.0)
     }
 }
 

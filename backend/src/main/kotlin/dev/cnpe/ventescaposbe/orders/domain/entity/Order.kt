@@ -208,8 +208,24 @@ class Order(
 
     /** Changes the order status, ensuring valid transitions. */
     fun updateStatus(newStatus: OrderStatus) {
-        // TODO: Implement state transition validation
-        // ** cannot go from COMPLETED back to PENDING,etc
+
+        if ((this.status == OrderStatus.COMPLETED ||
+                    this.status == OrderStatus.CANCELLED ||
+                    this.status == OrderStatus.REFUNDED) &&
+            (newStatus == OrderStatus.PENDING ||
+                    newStatus == OrderStatus.PROCESSING)
+        ) {
+            throw IllegalStateException("Cannot revert order from final status ${this.status} to $newStatus")
+        }
+
+        if (this.status == OrderStatus.COMPLETED && newStatus == OrderStatus.REFUNDED) {
+            // this is ok
+        } else if (this.status != OrderStatus.COMPLETED && newStatus == OrderStatus.REFUNDED) {
+
+            throw IllegalStateException("Cannot set status to REFUNDED unless order was COMPLETED. Current status: ${this.status}")
+        }
+        // TODO: recehck state transition validation if needed
+
         this.status = newStatus
     }
 
