@@ -15,6 +15,7 @@
     <includeAll path="tenants/inventory" relativeToChangelogFile="true"/>
     <includeAll path="tenants/suppliers" relativeToChangelogFile="true"/>
     <includeAll path="tenants/orders" relativeToChangelogFile="true"/>
+    <includeAll path="tenants/promotions" relativeToChangelogFile="true"/>
 
 
 </databaseChangeLog>
