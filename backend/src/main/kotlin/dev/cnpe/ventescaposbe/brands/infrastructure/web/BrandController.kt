@@ -3,6 +3,7 @@ package dev.cnpe.ventescaposbe.brands.infrastructure.web
 import dev.cnpe.ventescaposbe.brands.application.dto.request.CreateBrandRequest
 import dev.cnpe.ventescaposbe.brands.application.dto.response.BrandSummaryResponse
 import dev.cnpe.ventescaposbe.brands.application.service.BrandService
+import dev.cnpe.ventescaposbe.security.annotation.RequireAdmin
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -24,6 +25,7 @@ class BrandController(
 ) {
 
     @PostMapping
+    @RequireAdmin
     @Operation(summary = "Register a new brand", description = "Creates a new brand in the business.")
     @ApiResponse(
         responseCode = "201",

@@ -3,6 +3,7 @@ package dev.cnpe.ventescaposbe.business.infrastructure.web
 import dev.cnpe.ventescaposbe.business.application.dto.request.CreateBusinessUserRequest
 import dev.cnpe.ventescaposbe.business.application.dto.response.BusinessUserInfo
 import dev.cnpe.ventescaposbe.business.application.service.UserManagementService
+import dev.cnpe.ventescaposbe.security.annotation.RequireAdmin
 import dev.cnpe.ventescaposbe.security.ports.dto.UserIdentity
 import dev.cnpe.ventescaposbe.shared.application.dto.ApiResult
 import io.swagger.v3.oas.annotations.Operation
@@ -25,7 +26,7 @@ import org.springframework.web.bind.annotation.*
     name = "Business User Management",
     description = "Endpoints for Business Admins to manage users within their business."
 )
-@SecurityRequirement(name = "bearerAuth")
+@RequireAdmin
 class UserManagementController(
     private val userManagementService: UserManagementService
 ) {

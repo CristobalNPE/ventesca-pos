@@ -1,5 +1,6 @@
 package dev.cnpe.ventescaposbe.suppliers.infrastructure.web
 
+import dev.cnpe.ventescaposbe.security.annotation.RequireAdmin
 import dev.cnpe.ventescaposbe.shared.application.dto.ApiResult
 import dev.cnpe.ventescaposbe.suppliers.application.dto.request.CreateSupplierRequest
 import dev.cnpe.ventescaposbe.suppliers.application.dto.request.UpdateSupplierRequest
@@ -28,6 +29,7 @@ class SupplierController(
 ) {
 
     @PostMapping
+    @RequireAdmin
     @Operation(summary = "Register a new supplier")
     @ApiResponses(
         value = [
@@ -88,6 +90,7 @@ class SupplierController(
     }
 
     @PutMapping("/{id}")
+    @RequireAdmin
     @Operation(summary = "Update supplier details")
     @ApiResponses(
         value = [
@@ -120,6 +123,7 @@ class SupplierController(
     }
 
     @PutMapping("/{id}/status")
+    @RequireAdmin
     @Operation(summary = "Update supplier status (activate/deactivate)")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @ApiResponses(
@@ -147,6 +151,7 @@ class SupplierController(
     }
 
     @DeleteMapping("/{id}")
+    @RequireAdmin
     @Operation(summary = "Delete a supplier")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @ApiResponses(

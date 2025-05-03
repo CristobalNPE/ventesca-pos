@@ -5,6 +5,7 @@ import dev.cnpe.ventescaposbe.inventory.application.api.dto.BranchInventoryDetai
 import dev.cnpe.ventescaposbe.inventory.application.dto.request.AdjustStockRequest
 import dev.cnpe.ventescaposbe.inventory.application.dto.request.UpdateStockRequest
 import dev.cnpe.ventescaposbe.inventory.application.service.InventoryManagementService
+import dev.cnpe.ventescaposbe.security.annotation.RequireManagerAdminRoles
 import dev.cnpe.ventescaposbe.shared.application.dto.ApiResult
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -55,6 +56,7 @@ class InventoryController(
     }
 
     @PutMapping("/{productId}/stock")
+    @RequireManagerAdminRoles
     @Operation(
         summary = "Update stock for a product in a specific branch",
         description = "Sets the absolute stock quantity and minimum level for a product in the branch specified within the request body. Records the reason for the change."
@@ -82,6 +84,7 @@ class InventoryController(
     }
 
     @PostMapping("/{productId}/adjustments")
+    @RequireManagerAdminRoles
     @Operation(
         summary = "Manually adjust stock for a product in a specific branch",
         description = """

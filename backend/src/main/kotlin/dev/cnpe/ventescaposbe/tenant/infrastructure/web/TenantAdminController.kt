@@ -1,5 +1,6 @@
 package dev.cnpe.ventescaposbe.tenant.infrastructure.web
 
+import dev.cnpe.ventescaposbe.security.annotation.RequireSuperuser
 import dev.cnpe.ventescaposbe.tenant.dto.TenantOperationResult
 import dev.cnpe.ventescaposbe.tenant.service.TenantManagementService
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -22,7 +23,7 @@ private val log = KotlinLogging.logger {}
 @RestController
 @RequestMapping("/admin/tenants")
 @Tag(name = "Tenant Administration", description = "Endpoints for managing tenants (Requires SUPERADMIN role).")
-// TODO: Add Spring Security @PreAuthorize("hasRole('SUPERADMIN')") once roles are set up
+@RequireSuperuser
 class TenantAdminController(
     private val tenantManagementService: TenantManagementService
 ) {

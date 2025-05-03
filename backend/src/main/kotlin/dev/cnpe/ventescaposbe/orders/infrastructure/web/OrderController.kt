@@ -7,6 +7,7 @@ import dev.cnpe.ventescaposbe.orders.application.dto.response.OrderResponse
 import dev.cnpe.ventescaposbe.orders.application.dto.response.OrderSummaryResponse
 import dev.cnpe.ventescaposbe.orders.application.service.OrderService
 import dev.cnpe.ventescaposbe.orders.domain.enums.OrderStatus
+import dev.cnpe.ventescaposbe.security.annotation.RequirePosOperatorRoles
 import dev.cnpe.ventescaposbe.shared.application.dto.ApiResult
 import dev.cnpe.ventescaposbe.shared.application.dto.PageResponse
 import io.swagger.v3.oas.annotations.Operation
@@ -30,6 +31,7 @@ import java.time.OffsetDateTime
 @RestController
 @RequestMapping("/orders")
 @Tag(name = "Orders", description = "Manage sales orders.")
+@RequirePosOperatorRoles
 class OrderController(
     private val orderService: OrderService
 ) {

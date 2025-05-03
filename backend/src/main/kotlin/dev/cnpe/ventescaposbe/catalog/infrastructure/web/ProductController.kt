@@ -7,6 +7,7 @@ import dev.cnpe.ventescaposbe.catalog.application.dto.response.ProductPriceInfoR
 import dev.cnpe.ventescaposbe.catalog.application.dto.response.ProductSummaryResponse
 import dev.cnpe.ventescaposbe.catalog.application.service.ProductService
 import dev.cnpe.ventescaposbe.catalog.application.service.ProductUpdateService
+import dev.cnpe.ventescaposbe.security.annotation.RequireAdmin
 import dev.cnpe.ventescaposbe.shared.application.dto.ApiResult
 import dev.cnpe.ventescaposbe.shared.application.dto.PageResponse
 import io.swagger.v3.oas.annotations.Operation
@@ -33,6 +34,7 @@ class ProductController(
 ) {
 
     @PostMapping("/draft")
+    @RequireAdmin
     @Operation(summary = "Create a product draft with minimal info")
     @ApiResponses(
         value = [
@@ -65,6 +67,7 @@ class ProductController(
     }
 
     @PostMapping
+    @RequireAdmin
     @Operation(summary = "Create a full product with all details")
     @ApiResponses(
         value = [
@@ -168,6 +171,7 @@ class ProductController(
     // *******************************
 
     @PutMapping("/{id}/basics")
+    @RequireAdmin
     @Operation(summary = "Update product basic details (name, description)")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @ApiResponses(
@@ -197,6 +201,7 @@ class ProductController(
     }
 
     @PutMapping("/{id}/price")
+    @RequireAdmin
     @Operation(summary = "Update product selling price")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @ApiResponses(
@@ -221,6 +226,7 @@ class ProductController(
     }
 
     @PutMapping("/{id}/cost")
+    @RequireAdmin
     @Operation(summary = "Update product supplier cost")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @ApiResponses(
@@ -245,6 +251,7 @@ class ProductController(
     }
 
     @PutMapping("/{id}/relations")
+    @RequireAdmin
     @Operation(summary = "Update product relations (category, brand, supplier)")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @ApiResponses(
@@ -269,6 +276,7 @@ class ProductController(
     }
 
     @PutMapping("/{id}/status")
+    @RequireAdmin
     @Operation(summary = "Update product status")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @ApiResponses(
@@ -293,6 +301,7 @@ class ProductController(
     }
 
     @PostMapping("/{id}/activate")
+    @RequireAdmin
     @Operation(summary = "Activate a product (sets status to ACTIVE after validation)")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @ApiResponses(

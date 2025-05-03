@@ -4,6 +4,7 @@ import dev.cnpe.ventescaposbe.promotions.application.dto.request.CreateDiscountR
 import dev.cnpe.ventescaposbe.promotions.application.dto.request.UpdateDiscountRuleStatusRequest
 import dev.cnpe.ventescaposbe.promotions.application.dto.response.DiscountRuleResponse
 import dev.cnpe.ventescaposbe.promotions.application.service.PromotionAdminService
+import dev.cnpe.ventescaposbe.security.annotation.RequireAdmin
 import dev.cnpe.ventescaposbe.shared.application.dto.ApiResult
 import dev.cnpe.ventescaposbe.shared.application.dto.PageResponse
 import io.swagger.v3.oas.annotations.Operation
@@ -25,6 +26,7 @@ import java.net.URI
 @RestController
 @RequestMapping("/admin/promotions/rules")
 @Tag(name = "Promotion Management", description = "Endpoints for Admins to manage discount/promotion rules.")
+@RequireAdmin//TODO is this ok? Check when building front
 class PromotionAdminController(
     private val promotionAdminService: PromotionAdminService
 ) {
@@ -99,6 +101,7 @@ class PromotionAdminController(
     }
 
     @PutMapping("/{id}/status")
+    @RequireAdmin
     @Operation(summary = "Activate or deactivate a discount rule")
     @ApiResponses(
         value = [
@@ -127,6 +130,7 @@ class PromotionAdminController(
     }
 
     @DeleteMapping("/{id}")
+    @RequireAdmin
     @Operation(summary = "Delete a discount rule")
     @ApiResponses(
         value = [

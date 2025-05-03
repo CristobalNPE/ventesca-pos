@@ -3,6 +3,7 @@ package dev.cnpe.ventescaposbe.orders.infrastructure.web
 import dev.cnpe.ventescaposbe.orders.application.dto.request.ApplyDiscountRequest
 import dev.cnpe.ventescaposbe.orders.application.dto.response.OrderResponse
 import dev.cnpe.ventescaposbe.orders.application.service.DiscountApplicationService
+import dev.cnpe.ventescaposbe.security.annotation.RequirePosOperatorRoles
 import dev.cnpe.ventescaposbe.shared.application.dto.ApiResult
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/orders")
 @Tag(name = "Orders", description = "Manage discount application for orders")
+@RequirePosOperatorRoles
 class OrderDiscountController(
     private val discountApplicationService: DiscountApplicationService
 ) {

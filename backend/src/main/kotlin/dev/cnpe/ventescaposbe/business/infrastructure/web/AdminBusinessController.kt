@@ -3,6 +3,7 @@ package dev.cnpe.ventescaposbe.business.infrastructure.web
 import dev.cnpe.ventescaposbe.business.application.dto.request.AdminCreateBusinessRequest
 import dev.cnpe.ventescaposbe.business.application.dto.response.BusinessDetailedResponse
 import dev.cnpe.ventescaposbe.business.application.service.AdminBusinessService
+import dev.cnpe.ventescaposbe.security.annotation.RequireSuperuser
 import dev.cnpe.ventescaposbe.shared.application.dto.ApiResult
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -21,6 +22,7 @@ import java.net.URI
 @RestController
 @RequestMapping("/admin/businesses")
 @Tag(name = "Business Administration", description = "Endpoints for Superusers to manage businesses.")
+@RequireSuperuser
 class AdminBusinessController(
     private val adminBusinessService: AdminBusinessService
 ) {

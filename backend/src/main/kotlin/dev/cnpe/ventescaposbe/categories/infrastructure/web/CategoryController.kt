@@ -6,6 +6,7 @@ import dev.cnpe.ventescaposbe.categories.application.dto.response.CategoryCreate
 import dev.cnpe.ventescaposbe.categories.application.dto.response.CategoryDetailedResponse
 import dev.cnpe.ventescaposbe.categories.application.dto.response.CategoryWithChildrenResponse
 import dev.cnpe.ventescaposbe.categories.application.service.CategoryService
+import dev.cnpe.ventescaposbe.security.annotation.RequireAdmin
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -26,6 +27,7 @@ class CategoryController(
 ) {
 
     @PostMapping
+    @RequireAdmin
     @Operation(summary = "Create a new category", description = "Creates a new category in the business.")
     @ApiResponse(
         responseCode = "201",
@@ -45,6 +47,7 @@ class CategoryController(
     }
 
     @PostMapping("/{parentId}/subcategories")
+    @RequireAdmin
     @Operation(summary = "Create a subcategory", description = "Adds a subcategory to an existing category.")
     @ApiResponses(
         value = [
@@ -110,6 +113,7 @@ class CategoryController(
     }
 
     @DeleteMapping("/{id}")
+    @RequireAdmin
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete category by ID", description = "Deletes a single category by its unique identifier.")
     @ApiResponses(
@@ -123,6 +127,7 @@ class CategoryController(
     }
 
     @PutMapping("/{id}")
+    @RequireAdmin
     @Operation(summary = "Update category by ID", description = "Updates a single category by its unique identifier.")
     @ApiResponses(
         value = [
