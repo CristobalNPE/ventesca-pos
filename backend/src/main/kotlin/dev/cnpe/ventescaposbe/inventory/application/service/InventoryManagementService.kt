@@ -6,7 +6,8 @@ import dev.cnpe.ventescaposbe.inventory.application.dto.request.AdjustStockReque
 import dev.cnpe.ventescaposbe.inventory.application.dto.request.UpdateStockRequest
 import dev.cnpe.ventescaposbe.inventory.domain.entity.InventoryItem
 import dev.cnpe.ventescaposbe.inventory.domain.entity.StockModification
-import dev.cnpe.ventescaposbe.inventory.domain.enums.StockModificationReason
+import dev.cnpe.ventescaposbe.inventory.domain.enums.StockModificationReason.RETURN
+import dev.cnpe.ventescaposbe.inventory.domain.enums.StockModificationReason.SALE
 import dev.cnpe.ventescaposbe.inventory.domain.enums.StockModificationType.DECREASE
 import dev.cnpe.ventescaposbe.inventory.domain.enums.StockModificationType.INCREASE
 import dev.cnpe.ventescaposbe.inventory.domain.enums.StockUnitType
@@ -14,6 +15,7 @@ import dev.cnpe.ventescaposbe.inventory.domain.vo.Stock
 import dev.cnpe.ventescaposbe.inventory.event.StockUpdatedEvent
 import dev.cnpe.ventescaposbe.inventory.infrastructure.persistence.InventoryItemRepository
 import dev.cnpe.ventescaposbe.orders.event.OrderCompletedEvent
+import dev.cnpe.ventescaposbe.orders.event.ReturnProcessedEvent
 import dev.cnpe.ventescaposbe.shared.application.exception.DomainException
 import dev.cnpe.ventescaposbe.shared.application.exception.GeneralErrorCode
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -246,7 +248,7 @@ class InventoryManagementService(
                 val modification = StockModification(
                     amount = quantitySold,
                     type = DECREASE,
-                    reason = StockModificationReason.SALE,
+                    reason = SALE,
                     item = inventoryItem,
                 )
                 inventoryItem.addStockModification(modification)
@@ -282,6 +284,78 @@ class InventoryManagementService(
         }
     }
 
+
+    /**
+     * Listens for ReturnProcessedEvent and updates inventory stock levels accordingly.
+     * Increases stock for items marked for restock.
+     */
+    @ApplicationModuleListener
+    fun onReturnProcessed(event: ReturnProcessedEvent) {
+        log.info {
+            "Received ReturnProcessedEvent for ReturnTransaction ID: ${event.returnTransactionId}, Branch ID: ${event.branchId}." +
+                    "Processing ${event.itemsToRestock.size} item(s) for restock and ${event.itemsToDiscard.size} to discard."
+        }
+
+        event.itemsToRestock.forEach { itemToRestock ->
+            try {
+                val inventoryItem = inventoryItemRepository.findByProductIdAndBranchId(
+                    productId = itemToRestock.productId,
+                    branchId = event.branchId
+                )
+
+                if (inventoryItem == null) {
+                    log.error {
+                        "Inventory item not found for Product ID ${itemToRestock.productId} in Branch ${event.branchId} " +
+                                "while processing ReturnProcessedEvent ${event.returnTransactionId}. Cannot restock this item."
+                    }
+                    //todo: reconciliation?
+                    return@forEach
+                }
+
+                val quantityToRestock = itemToRestock.quantity
+                val originalQuantity = inventoryItem.currentQuantity
+
+                log.debug {
+                    "Restocking Product ID ${itemToRestock.productId} (Branch ${event.branchId}). " +
+                            "Original Qty: $originalQuantity, Quantity Returned for Restock: $quantityToRestock."
+                }
+
+                val modification = StockModification(
+                    amount = quantityToRestock,
+                    type = INCREASE,
+                    reason = RETURN,
+                    item = inventoryItem,
+                )
+                inventoryItem.addStockModification(modification)
+
+                inventoryItem.stock = inventoryItem.stock.addQuantity(quantityToRestock)
+
+                inventoryItemRepository.save(inventoryItem)
+                log.info {
+                    "Stock updated via Restock for Product ID ${itemToRestock.productId} (Branch ${event.branchId}). " +
+                            "New Quantity: ${inventoryItem.stock.quantity}. Recorded RETURN modification."
+                }
+
+                val totalStockQuantity = inventoryItemRepository.calculateTotalStockForProduct(itemToRestock.productId)
+                eventPublisher.publishEvent(StockUpdatedEvent(itemToRestock.productId, totalStockQuantity))
+                log.debug { "Published StockUpdatedEvent for Product ID ${itemToRestock.productId}. New Total Stock: $totalStockQuantity" }
+            } catch (e: Exception) {
+                log.error(e) {
+                    "Failed to process stock restock for Product ID ${itemToRestock.productId} (Branch ${event.branchId}) " +
+                            "from ReturnProcessedEvent ${event.returnTransactionId}."
+                }
+                // TODO: retry/dead-letter
+            }
+        }
+        if (event.itemsToDiscard.isNotEmpty()) {
+            log.info {
+                "Discarded items from Return ID ${event.returnTransactionId} (Branch ${event.branchId}): " +
+                        event.itemsToDiscard.joinToString { "PID: ${it.productId} (Qty: ${it.quantity})" }
+            }
+        }
+
+        log.info { "Finished processing inventory updates for ReturnProcessedEvent ${event.returnTransactionId}." }
+    }
 
     // FIXME: Implement branch deletion logic listener if needed
     // @ApplicationModuleListener
