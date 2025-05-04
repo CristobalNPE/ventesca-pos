@@ -1,5 +1,6 @@
 package dev.cnpe.ventescaposbe.orders.application.api
 
+import dev.cnpe.ventescaposbe.currency.vo.Money
 import dev.cnpe.ventescaposbe.orders.application.api.dto.OrderStatsData
 
 
@@ -16,5 +17,12 @@ interface OrderInfoPort {
      * @return OrderStatsData containing the necessary info, or null if the order is not found.
      */
     fun getOrderStatsInfo(orderId: Long): OrderStatsData?
+
+
+    /** Calculates total cash payments for completed orders in a session. */
+    fun calculateSessionCashSales(sessionId: Long): Money
+
+    /** Calculates total final amount for completed orders in a session. */
+    fun calculateSessionTotalSales(sessionId: Long): Money
 
 }
