@@ -1,9 +1,11 @@
 package dev.cnpe.ventescaposbe.business.application.service
 
 import dev.cnpe.ventescaposbe.business.application.api.BusinessDataPort
+import dev.cnpe.ventescaposbe.business.application.dto.response.BusinessBranchInfo
 import dev.cnpe.ventescaposbe.business.domain.enums.BusinessStatus
 import dev.cnpe.ventescaposbe.business.domain.model.BusinessUser
 import dev.cnpe.ventescaposbe.business.dto.BusinessPaymentData
+import dev.cnpe.ventescaposbe.business.infrastructure.persistence.BusinessBranchRepository
 import dev.cnpe.ventescaposbe.business.infrastructure.persistence.BusinessUserRepository
 import dev.cnpe.ventescaposbe.currency.infrastructure.persistence.CurrencyRepository
 import dev.cnpe.ventescaposbe.security.context.UserContext
@@ -11,6 +13,7 @@ import dev.cnpe.ventescaposbe.shared.application.exception.DomainException
 import dev.cnpe.ventescaposbe.shared.application.exception.GeneralErrorCode.INSUFFICIENT_CONTEXT
 import dev.cnpe.ventescaposbe.shared.application.exception.GeneralErrorCode.RESOURCE_NOT_FOUND
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -23,6 +26,7 @@ private val log = KotlinLogging.logger {}
 @Transactional(readOnly = true)
 open class BusinessDataService(
     private val businessUserRepository: BusinessUserRepository,
+    private val businessBranchRepository: BusinessBranchRepository,
     private val currencyRepository: CurrencyRepository,
     private val userContext: UserContext
 ) : BusinessDataPort {
@@ -86,6 +90,25 @@ open class BusinessDataService(
     override fun getCurrentBusinessName(): String? {
         val businessUser = getCurrentBusinessUserOrThrow()
         return businessUser.business?.details?.businessName
+    }
+
+    override fun getCurrentBusinessBrandMessage(): String? {
+        val businessUser = getCurrentBusinessUserOrThrow()
+        return businessUser.business?.details?.brandMessage
+    }
+
+    override fun getBranchDetails(branchId: Long): BusinessBranchInfo {
+        val branch = businessBranchRepository.findByIdOrNull(branchId) ?: throw DomainException(
+            RESOURCE_NOT_FOUND,
+            mapOf("entityType" to "BusinessBranch", "branchId" to branchId)
+        )
+        return BusinessBranchInfo(
+            branchId = branch.id!!,
+            branchName = branch.branchName,
+            address = branch.address,
+            contactNumber = branch.branchContactNumber,
+            isMainBranch = branch.isMainBranch
+        )
     }
 
     // *******************************

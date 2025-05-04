@@ -44,6 +44,8 @@ dependencies {
 
     implementation("org.jboss:jandex:3.3.0")
 
+    implementation("com.github.librepdf:openpdf:2.0.3")
+
     developmentOnly("org.springframework.boot:spring-boot-docker-compose")
     runtimeOnly("org.postgresql:postgresql")
 
