@@ -10,6 +10,8 @@ import dev.cnpe.ventescaposbe.customers.infrastructure.persistence.CustomerRepos
 import dev.cnpe.ventescaposbe.inventory.infrastructure.persistence.InventoryItemRepository
 import dev.cnpe.ventescaposbe.orders.infrastructure.persistence.OrderRepository
 import dev.cnpe.ventescaposbe.promotions.infrastructure.persistence.DiscountRuleRepository
+import dev.cnpe.ventescaposbe.sessions.infrastructure.persistence.CashMovementRepository
+import dev.cnpe.ventescaposbe.sessions.infrastructure.persistence.RegisterSessionRepository
 import dev.cnpe.ventescaposbe.suppliers.infrastructure.persistence.SupplierRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.persistence.EntityManagerFactory
@@ -41,7 +43,9 @@ private val log = KotlinLogging.logger {}
         InventoryItemRepository::class,
         OrderRepository::class,
         DiscountRuleRepository::class,
-        CustomerRepository::class
+        CustomerRepository::class,
+        RegisterSessionRepository::class,
+        CashMovementRepository::class
 
     ],
     excludeFilters = [
@@ -92,7 +96,7 @@ class TenantJpaConfig : BaseJpaConfig() {
             "dev.cnpe.ventescaposbe.brands.domain",
             "dev.cnpe.ventescaposbe.categories.domain",
             "dev.cnpe.ventescaposbe.suppliers.domain",
-            "dev.cnpe.ventescaposbe.catalog.domain.model",
+            "dev.cnpe.ventescaposbe.catalog.domain",
             "dev.cnpe.ventescaposbe.inventory.domain",
             "dev.cnpe.ventescaposbe.orders.domain",
             "dev.cnpe.ventescaposbe.promotions.domain",

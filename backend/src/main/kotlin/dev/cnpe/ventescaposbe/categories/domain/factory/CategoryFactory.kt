@@ -87,7 +87,7 @@ class CategoryFactory(
         val maxAttempts = 36
 
         while (categoryRepository.existsByCode(GeneratedCode(currentCode)) && suffix <= maxAttempts) {
-            val codeRoot = baseCode.take(max(0, CodeGeneratorService.CODE_LENGTH - 1))
+            val codeRoot = baseCode.take(max(0, currentCode.length - 1))
             currentCode = if (suffix <= 9) {
                 codeRoot + suffix
             } else {
