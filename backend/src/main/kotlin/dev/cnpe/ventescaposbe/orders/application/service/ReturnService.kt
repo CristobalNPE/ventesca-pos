@@ -17,9 +17,11 @@ import dev.cnpe.ventescaposbe.orders.event.ReturnProcessedEvent
 import dev.cnpe.ventescaposbe.orders.infrastructure.persistence.OrderRepository
 import dev.cnpe.ventescaposbe.orders.infrastructure.persistence.ReturnTransactionRepository
 import dev.cnpe.ventescaposbe.security.context.UserContext
+import dev.cnpe.ventescaposbe.sessions.application.api.SessionInfoPort
 import dev.cnpe.ventescaposbe.shared.application.exception.DomainException
 import dev.cnpe.ventescaposbe.shared.application.exception.GeneralErrorCode.INSUFFICIENT_CONTEXT
 import dev.cnpe.ventescaposbe.shared.application.exception.createInvalidDataException
+import dev.cnpe.ventescaposbe.shared.application.exception.createInvalidStateException
 import dev.cnpe.ventescaposbe.shared.application.exception.createResourceNotFoundException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.context.ApplicationEventPublisher
@@ -38,7 +40,8 @@ class ReturnService(
     private val moneyFactory: MoneyFactory,
     private val returnTransactionRepository: ReturnTransactionRepository,
     private val eventPublisher: ApplicationEventPublisher,
-    private val returnMapper: ReturnMapper
+    private val returnMapper: ReturnMapper,
+    private val sessionInfoPort: SessionInfoPort
 ) {
 
 
@@ -92,6 +95,15 @@ class ReturnService(
 
         val branchId = originalOrder.branchId
 
+        val openSessionInfo = (sessionInfoPort.findOpenSession(userId, branchId)
+            ?: throw createInvalidStateException(
+                reason = "NO_OPEN_SESSION",
+                entityId = request.originalOrderId,
+                additionalDetails = mapOf("userId" to userId, "branchId" to branchId)
+            ))
+        val currentSessionId = openSessionInfo.sessionId
+        log.debug { "Return for Order ID ${request.originalOrderId} will be linked to Session ID $currentSessionId" }
+
         validateReturnRequestItems(request, originalOrder)
 
         val currencyCode = originalOrder.finalAmount.currencyCode
@@ -106,6 +118,7 @@ class ReturnService(
             totalRefundAmount = zero,
             refundMethod = request.refundMethod,
             notes = request.notes,
+            sessionId = currentSessionId,
         )
 
         val itemsToRestock = mutableListOf<ItemAdjustmentInfo>()
@@ -152,7 +165,7 @@ class ReturnService(
         log.info { "Original Order ${originalOrder.id} status set to REFUNDED and items updated." }
 
         val savedReturnTransaction = returnTransactionRepository.save(returnTransaction)
-        log.info { "Saved new ReturnTransaction ID: ${savedReturnTransaction.id} with ${savedReturnTransaction.returnedItems.size} items." }
+        log.info { "Saved new ReturnTransaction ID: ${savedReturnTransaction.id} linked to Session ID ${savedReturnTransaction.sessionId}." }
 
         try {
             val event = ReturnProcessedEvent(

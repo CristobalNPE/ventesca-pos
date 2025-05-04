@@ -24,6 +24,7 @@ import dev.cnpe.ventescaposbe.orders.event.ItemSoldInfo
 import dev.cnpe.ventescaposbe.orders.event.OrderCompletedEvent
 import dev.cnpe.ventescaposbe.orders.infrastructure.persistence.OrderRepository
 import dev.cnpe.ventescaposbe.security.context.UserContext
+import dev.cnpe.ventescaposbe.sessions.application.api.SessionInfoPort
 import dev.cnpe.ventescaposbe.shared.application.dto.PageResponse
 import dev.cnpe.ventescaposbe.shared.application.exception.*
 import dev.cnpe.ventescaposbe.shared.application.exception.GeneralErrorCode.INSUFFICIENT_CONTEXT
@@ -55,7 +56,8 @@ class OrderService(
     private val moneyFactory: MoneyFactory,
     private val productUtils: ProductUtils,
     private val eventPublisher: ApplicationEventPublisher,
-    private val customerInfoPort: CustomerInfoPort
+    private val customerInfoPort: CustomerInfoPort,
+    private val sessionInfoPort: SessionInfoPort
 ) {
 
     companion object {
@@ -125,7 +127,6 @@ class OrderService(
 
         return orderMapper.toResponse(savedOrder, customerInfo)
     }
-
 
 
     /**
@@ -417,18 +418,29 @@ class OrderService(
 
         require(order.status != OrderStatus.COMPLETED && order.status != OrderStatus.CANCELLED) {
             "Order ${order.id} cannot be completed because its status is already ${order.status}."
-            // TODO: consider DomainException(INVALID_STATE)?
+            throw createInvalidStateException("NOT_VALID_FOR_COMPLETION")
         }
 
         require(order.isFullyPaid()) {
             "Order ${order.id} cannot be completed as it is not fully paid. " +
                     "Amount Due: ${order.finalAmount - order.calculateTotalPaid()}"
-            // TODO: consider DomainException(INVALID_STATE)?
+            throw createInvalidStateException("NOT_FULLY_PAID")
         }
+
+        val userId = userContext.userId ?: throw DomainException(INSUFFICIENT_CONTEXT)
+        val openSessionInfo = (sessionInfoPort.findOpenSession(userId, order.branchId)
+            ?: throw createInvalidStateException(
+                reason = "NO_OPEN_SESSION",
+                entityId = orderId,
+                additionalDetails = mapOf("userId" to userId, "branchId" to order.branchId)
+            ))
+        order.sessionId = openSessionInfo.sessionId
+        log.debug { "Linking Order ID $orderId to Session ID ${order.sessionId}" }
+
 
         order.updateStatus(OrderStatus.COMPLETED)
         val savedOrder = orderRepository.save(order)
-        log.info { "✅ Order ID: $orderId marked as COMPLETED." }
+        log.info { "✅ Order ID: $orderId marked as COMPLETED and linked to Session ID ${savedOrder.sessionId}." }
 
         try {
             val itemsSoldInfo = savedOrder.orderItems.map {
@@ -450,7 +462,8 @@ class OrderService(
             }
             //TODO: listener should handle retries ? or be idempotent?
         }
-        return orderMapper.toResponse(savedOrder)
+        val customerInfo = savedOrder.customerId?.let { customerInfoPort.getCustomerBasicInfo(it) }
+        return orderMapper.toResponse(savedOrder, customerInfo)
     }
 
 
