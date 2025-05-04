@@ -55,9 +55,11 @@ class OrderController(
         ]
     )
     fun startNewOrder(
-        @PathVariable branchId: Long
+        @Parameter(description = "ID of the branch where the order is created") @PathVariable branchId: Long,
+        @Parameter(description = "Optional ID of the customer to associate with the order.")
+        @RequestParam(required = false) customerId: Long?
     ): ResponseEntity<OrderResponse> {
-        val createdOrder = orderService.startNewOrder(branchId)
+        val createdOrder = orderService.startNewOrder(branchId, customerId)
         return ResponseEntity
             .created(URI.create("/orders/${createdOrder.id}"))
             .body(createdOrder)

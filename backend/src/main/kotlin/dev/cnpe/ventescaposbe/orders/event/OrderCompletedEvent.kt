@@ -7,5 +7,6 @@ package dev.cnpe.ventescaposbe.orders.event
 data class OrderCompletedEvent(
     val orderId: Long,
     val branchId:Long,
+    val customerId: Long?,
     val itemsSold: List<ItemSoldInfo>
 )

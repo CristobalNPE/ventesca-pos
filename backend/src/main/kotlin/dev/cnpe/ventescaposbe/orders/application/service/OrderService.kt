@@ -6,11 +6,11 @@ import dev.cnpe.ventescaposbe.catalog.application.util.ProductUtils
 import dev.cnpe.ventescaposbe.catalog.domain.enums.ProductStatus
 import dev.cnpe.ventescaposbe.currency.service.MoneyFactory
 import dev.cnpe.ventescaposbe.currency.vo.Money
+import dev.cnpe.ventescaposbe.customers.application.api.CustomerInfoPort
 import dev.cnpe.ventescaposbe.inventory.application.api.InventoryInfoPort
 import dev.cnpe.ventescaposbe.inventory.application.api.dto.BranchInventoryDetails
 import dev.cnpe.ventescaposbe.orders.application.dto.request.AddItemToOrderRequest
 import dev.cnpe.ventescaposbe.orders.application.dto.request.AddPaymentRequest
-import dev.cnpe.ventescaposbe.orders.application.dto.request.ApplyDiscountRequest
 import dev.cnpe.ventescaposbe.orders.application.dto.request.UpdateOrderItemQuantityRequest
 import dev.cnpe.ventescaposbe.orders.application.dto.response.OrderResponse
 import dev.cnpe.ventescaposbe.orders.application.dto.response.OrderSummaryResponse
@@ -23,14 +23,10 @@ import dev.cnpe.ventescaposbe.orders.domain.enums.PaymentStatus
 import dev.cnpe.ventescaposbe.orders.event.ItemSoldInfo
 import dev.cnpe.ventescaposbe.orders.event.OrderCompletedEvent
 import dev.cnpe.ventescaposbe.orders.infrastructure.persistence.OrderRepository
-import dev.cnpe.ventescaposbe.promotions.application.api.PromotionInfoPort
 import dev.cnpe.ventescaposbe.security.context.UserContext
 import dev.cnpe.ventescaposbe.shared.application.dto.PageResponse
-import dev.cnpe.ventescaposbe.shared.application.exception.DomainException
-import dev.cnpe.ventescaposbe.shared.application.exception.GeneralErrorCode
+import dev.cnpe.ventescaposbe.shared.application.exception.*
 import dev.cnpe.ventescaposbe.shared.application.exception.GeneralErrorCode.INSUFFICIENT_CONTEXT
-import dev.cnpe.ventescaposbe.shared.application.exception.createInvalidStateException
-import dev.cnpe.ventescaposbe.shared.application.exception.createResourceNotFoundException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.persistence.criteria.Predicate
 import org.springframework.context.ApplicationEventPublisher
@@ -58,8 +54,8 @@ class OrderService(
     private val inventoryInfoPort: InventoryInfoPort,
     private val moneyFactory: MoneyFactory,
     private val productUtils: ProductUtils,
-    private val promotionInfoPort: PromotionInfoPort,
-    private val eventPublisher: ApplicationEventPublisher
+    private val eventPublisher: ApplicationEventPublisher,
+    private val customerInfoPort: CustomerInfoPort
 ) {
 
     companion object {
@@ -73,7 +69,7 @@ class OrderService(
      * @param branchId The ID of the branch where the order is being created.
      * @return A response DTO representing the newly created pending order.
      */
-    fun startNewOrder(branchId: Long): OrderResponse {
+    fun startNewOrder(branchId: Long, customerId: Long? = null): OrderResponse {
         val userId = userContext.userId
             ?: throw DomainException(
                 errorCode = INSUFFICIENT_CONTEXT,
@@ -93,8 +89,14 @@ class OrderService(
                 )
             )
         }
+        var validatedCustomerId = validateCustomerId(customerId)
 
-        log.info { "Starting new order by User: $userId in Branch: $branchId" }
+        log.info {
+            "Starting new order by User: $userId in Branch: $branchId ${
+                if (validatedCustomerId != null)
+                    "for Customer: $validatedCustomerId" else ""
+            }"
+        }
 
         val businessPaymentData = businessDataPort.getBusinessPaymentData()
         val currencyCode = businessPaymentData.currencyCode
@@ -110,13 +112,21 @@ class OrderService(
             taxAmount = zeroAmount,
             totalAmount = zeroAmount,
             discountAmount = zeroAmount,
-            finalAmount = zeroAmount
+            finalAmount = zeroAmount,
+            customerId = validatedCustomerId
         )
 
         val savedOrder = orderRepository.save(newOrder)
         log.info { "New order created with ID: ${savedOrder.id}, Number: ${savedOrder.orderNumber}" }
-        return orderMapper.toResponse(savedOrder)
+        val customerInfo = validatedCustomerId?.let { custId ->
+            customerInfoPort.getCustomerBasicInfo(custId)
+        }
+
+
+        return orderMapper.toResponse(savedOrder, customerInfo)
     }
+
+
 
     /**
      * Adds a product item to an existing pending order.
@@ -306,7 +316,12 @@ class OrderService(
         val order = (orderRepository.findByIdWithItemsAndPayments(orderId)
             ?: throw createResourceNotFoundException("Order", orderId))
 
-        return orderMapper.toResponse(order)
+        val customerInfo = order.customerId?.let { custId ->
+            log.debug { "Fetching basic info for Customer ID: $custId associated with Order ID: $orderId" }
+            customerInfoPort.getCustomerBasicInfo(custId)
+        }
+
+        return orderMapper.toResponse(order, customerInfo)
     }
 
 
@@ -423,7 +438,8 @@ class OrderService(
             val event = OrderCompletedEvent(
                 orderId = savedOrder.id!!,
                 branchId = savedOrder.branchId,
-                itemsSold = itemsSoldInfo
+                itemsSold = itemsSoldInfo,
+                customerId = savedOrder.customerId,
             )
             eventPublisher.publishEvent(event)
             log.info { "Published OrderCompletedEvent for Order ID: ${savedOrder.id}" }
@@ -558,7 +574,6 @@ class OrderService(
     }
 
 
-
     // *******************************
     // 🔰 Private Helpers
     // *******************************
@@ -604,5 +619,20 @@ class OrderService(
         return branchInventory
     }
 
+    private fun validateCustomerId(customerId: Long?): Long? {
+        var validatedCustomerId: Long? = null
+        if (customerId != null) {
+            log.debug { "Attempting to associate Customer ID: $customerId with new order." }
+            if (!customerInfoPort.doesCustomerExist(customerId)) {
+                throw createInvalidDataException(
+                    field = "customerId",
+                    value = customerId,
+                )
+            }
+            validatedCustomerId = customerId
+            log.debug { "Customer ID $customerId validated successfully." }
+        }
+        return validatedCustomerId
+    }
 
 }

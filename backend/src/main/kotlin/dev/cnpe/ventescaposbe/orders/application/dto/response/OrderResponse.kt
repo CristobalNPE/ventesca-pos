@@ -2,6 +2,7 @@ package dev.cnpe.ventescaposbe.orders.application.dto.response
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import dev.cnpe.ventescaposbe.currency.vo.Money
+import dev.cnpe.ventescaposbe.customers.application.api.dto.CustomerBasicInfo
 import dev.cnpe.ventescaposbe.orders.domain.enums.OrderStatus
 import dev.cnpe.ventescaposbe.shared.application.dto.ResourceAuditData
 import io.swagger.v3.oas.annotations.media.Schema
@@ -27,6 +28,10 @@ data class OrderResponse(
 
     @Schema(description = "ID of the associated customer, if any.")
     val customerId: Long?,
+
+    @Schema(description = "Basic details of the associated customer, if any.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    val customerInfo: CustomerBasicInfo?,
 
     @Schema(description = "Timestamp when the order was created/placed.")
     val orderTimestamp: OffsetDateTime,

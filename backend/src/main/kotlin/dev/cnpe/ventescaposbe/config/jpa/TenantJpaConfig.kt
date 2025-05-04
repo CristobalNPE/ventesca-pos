@@ -6,6 +6,7 @@ import dev.cnpe.ventescaposbe.catalog.infrastructure.persistence.ProductPriceRep
 import dev.cnpe.ventescaposbe.catalog.infrastructure.persistence.ProductRepository
 import dev.cnpe.ventescaposbe.categories.infrastructure.persistence.CategoryRepository
 import dev.cnpe.ventescaposbe.currency.infrastructure.persistence.CurrencyRepository
+import dev.cnpe.ventescaposbe.customers.infrastructure.persistence.CustomerRepository
 import dev.cnpe.ventescaposbe.inventory.infrastructure.persistence.InventoryItemRepository
 import dev.cnpe.ventescaposbe.orders.infrastructure.persistence.OrderRepository
 import dev.cnpe.ventescaposbe.promotions.infrastructure.persistence.DiscountRuleRepository
@@ -39,7 +40,9 @@ private val log = KotlinLogging.logger {}
         ProductPriceRepository::class,
         InventoryItemRepository::class,
         OrderRepository::class,
-        DiscountRuleRepository::class
+        DiscountRuleRepository::class,
+        CustomerRepository::class
+
     ],
     excludeFilters = [
         ComponentScan.Filter(
@@ -93,6 +96,7 @@ class TenantJpaConfig : BaseJpaConfig() {
             "dev.cnpe.ventescaposbe.inventory.domain",
             "dev.cnpe.ventescaposbe.orders.domain",
             "dev.cnpe.ventescaposbe.promotions.domain",
+            "dev.cnpe.ventescaposbe.customers.domain",
             "dev.cnpe.ventescaposbe.shared.domain",
             "org.springframework.modulith.events.jpa"
             // Add ALL packages containing entities managed by the tenant EMF

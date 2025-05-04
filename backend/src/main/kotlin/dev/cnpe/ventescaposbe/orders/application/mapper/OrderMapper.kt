@@ -1,6 +1,7 @@
 package dev.cnpe.ventescaposbe.orders.application.mapper
 
 import dev.cnpe.ventescaposbe.currency.service.MoneyFactory
+import dev.cnpe.ventescaposbe.customers.application.api.dto.CustomerBasicInfo
 import dev.cnpe.ventescaposbe.orders.application.dto.response.OrderItemResponse
 import dev.cnpe.ventescaposbe.orders.application.dto.response.OrderResponse
 import dev.cnpe.ventescaposbe.orders.application.dto.response.OrderSummaryResponse
@@ -21,7 +22,7 @@ class OrderMapper(
      * @param order The order entity to convert
      * @return OrderResponse containing order details with calculated totals
      */
-    fun toResponse(order: Order): OrderResponse {
+    fun toResponse(order: Order, customerInfo: CustomerBasicInfo? = null): OrderResponse {
         val totalPaid = order.calculateTotalPaid()
         val finalAmount = order.finalAmount
 
@@ -41,6 +42,7 @@ class OrderMapper(
             branchId = order.branchId,
             userIdpId = order.userIdpId,
             customerId = order.customerId,
+            customerInfo = customerInfo,
             orderTimestamp = order.orderTimestamp,
             items = order.orderItems.map { toItemResponse(it) },
             payments = order.payments.map { toPaymentResponse(it) },
