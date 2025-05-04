@@ -97,6 +97,7 @@ class TenantJpaConfig : BaseJpaConfig() {
             "dev.cnpe.ventescaposbe.orders.domain",
             "dev.cnpe.ventescaposbe.promotions.domain",
             "dev.cnpe.ventescaposbe.customers.domain",
+            "dev.cnpe.ventescaposbe.sessions.domain",
             "dev.cnpe.ventescaposbe.shared.domain",
             "org.springframework.modulith.events.jpa"
             // Add ALL packages containing entities managed by the tenant EMF

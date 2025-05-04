@@ -58,6 +58,9 @@ class ReturnTransaction(
     )
     val returnedItems: MutableList<ReturnedItem> = mutableListOf(),
 
+    @Column(name = "session_id")
+    var sessionId: Long? = null,
+
     // TODO: Should we add a return transaction number field later??
 
     id: Long? = null,

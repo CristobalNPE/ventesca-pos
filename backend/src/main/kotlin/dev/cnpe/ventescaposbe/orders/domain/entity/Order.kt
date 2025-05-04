@@ -95,6 +95,8 @@ class Order(
     @OneToMany(mappedBy = "order", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     val payments: MutableList<Payment> = mutableListOf(),
 
+    @Column(name = "session_id")
+    var sessionId: Long? = null,
 
     id: Long? = null,
     version: Int = 0

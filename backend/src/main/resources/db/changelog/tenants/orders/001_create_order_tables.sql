@@ -1,9 +1,9 @@
 -- liquibase formatted sql
 
--- changeset cnpe:1746294572298-1
+-- changeset cnpe:1746325850794-1
 CREATE SEQUENCE IF NOT EXISTS primary_sequence START WITH 10000 INCREMENT BY 1;
 
--- changeset cnpe:1746294572298-2
+-- changeset cnpe:1746325850794-2
 CREATE TABLE order_items
 (
     id                       BIGINT           NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE order_items
     CONSTRAINT pk_order_items PRIMARY KEY (id)
 );
 
--- changeset cnpe:1746294572298-3
+-- changeset cnpe:1746325850794-3
 CREATE TABLE orders
 (
     id                             BIGINT       NOT NULL,
@@ -45,6 +45,7 @@ CREATE TABLE orders
     order_timestamp                TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     applied_order_discount_rule_id BIGINT,
     notes                          VARCHAR(500),
+    session_id                     BIGINT,
     sub_total_amount               DECIMAL      NOT NULL,
     sub_total_currency             VARCHAR(3)   NOT NULL,
     tax_amount                     DECIMAL      NOT NULL,
@@ -60,7 +61,7 @@ CREATE TABLE orders
     CONSTRAINT pk_orders PRIMARY KEY (id)
 );
 
--- changeset cnpe:1746294572298-4
+-- changeset cnpe:1746325850794-4
 CREATE TABLE payments
 (
     id                    BIGINT       NOT NULL,
@@ -79,7 +80,7 @@ CREATE TABLE payments
     CONSTRAINT pk_payments PRIMARY KEY (id)
 );
 
--- changeset cnpe:1746294572298-5
+-- changeset cnpe:1746325850794-5
 CREATE TABLE return_transactions
 (
     id                    BIGINT       NOT NULL,
@@ -97,12 +98,13 @@ CREATE TABLE return_transactions
     status                VARCHAR(255) NOT NULL,
     refund_method         VARCHAR(255) NOT NULL,
     notes                 VARCHAR(500),
+    session_id            BIGINT,
     total_refund_amount   DECIMAL      NOT NULL,
     total_refund_currency VARCHAR(3)   NOT NULL,
     CONSTRAINT pk_return_transactions PRIMARY KEY (id)
 );
 
--- changeset cnpe:1746294572298-6
+-- changeset cnpe:1746325850794-6
 CREATE TABLE returned_items
 (
     id                         BIGINT           NOT NULL,
@@ -126,19 +128,19 @@ CREATE TABLE returned_items
     CONSTRAINT pk_returned_items PRIMARY KEY (id)
 );
 
--- changeset cnpe:1746294572298-7
+-- changeset cnpe:1746325850794-7
 ALTER TABLE orders
     ADD CONSTRAINT uc_orders_order_number UNIQUE (order_number);
 
--- changeset cnpe:1746294572298-8
+-- changeset cnpe:1746325850794-8
 ALTER TABLE order_items
     ADD CONSTRAINT FK_ORDER_ITEMS_ON_ORDER FOREIGN KEY (order_id) REFERENCES orders (id);
 
--- changeset cnpe:1746294572298-9
+-- changeset cnpe:1746325850794-9
 ALTER TABLE payments
     ADD CONSTRAINT FK_PAYMENTS_ON_ORDER FOREIGN KEY (order_id) REFERENCES orders (id);
 
--- changeset cnpe:1746294572298-10
+-- changeset cnpe:1746325850794-10
 ALTER TABLE returned_items
     ADD CONSTRAINT FK_RETURNED_ITEMS_ON_RETURN_TRANSACTION FOREIGN KEY (return_transaction_id) REFERENCES return_transactions (id);
 
