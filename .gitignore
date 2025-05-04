@@ -7,6 +7,11 @@ Thumbs.db
 *~
 *.swp
 digest.txt
+node_modules
+dist
+dist-ssr
+*.local
+
 
 # ===================================================================
 # IDEs - Assuming you open the root 'ventesca-pos' folder
